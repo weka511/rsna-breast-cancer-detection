@@ -6,5 +6,5 @@ Folder|File|Description
 docs|rsna-breast-cancer-detection.tex|
 -|rsna-breast-cancer-detection.bib|
 src|rsna-breast-cancer-detection.wpr|
--|download|Download selected data from kaggle
+-|download.py|Download selected data from kaggle
 data||
