@@ -1,15 +1,15 @@
+#!/usr/bin/env python
+
 TYPE   = 'train_images'
-HEADERS = ['10106','10122']
 
-def download(name):
+def download(name,out):
     parts = name.split('/')
-    if parts[0].startswith(TYPE) and parts[1] in HEADERS:
-        print (name)
+    if parts[0].startswith(TYPE):
+        out.write(f'kaggle competitions download -f {name} rsna-breast-cancer-detection\n')
 
-
-with open('../data/files.txt') as f:
+with open('download.bat','w') as out,open('../data/files.txt') as f:
     for line in f:
         name = line.split()[0]
         if name.endswith('dcm'):
-            download(name)
+            download(name,out)
 
