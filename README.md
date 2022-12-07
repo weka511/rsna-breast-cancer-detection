@@ -8,4 +8,5 @@ docs|rsna-breast-cancer-detection.tex|
 src|rsna-breast-cancer-detection.wpr|
 -|download.py|Download selected data from kaggle
 -|visualize.py|Visualize data
+-|visualize_train.py|Visualize training data
 data||

@@ -21,7 +21,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+from argparse          import ArgumentParser
 from matplotlib.pyplot import figure, show
 from os.path           import exists, join
 from pydicom           import dcmread
@@ -34,6 +34,10 @@ patient_id_previous = None
 fig                 = None
 sub_fig             = None
 counts              = {}
+
+parser = ArgumentParser('Visualize Data')
+parser.add_argument('--show', default=False, action='store_true')
+args = parser.parse_args()
 
 for _,row in read_csv(TRAIN).iterrows():
     site_id                 = row['site_id']
@@ -57,7 +61,7 @@ for _,row in read_csv(TRAIN).iterrows():
             patient_id_previous = patient_id
             if fig!=None:
                 fig.savefig(join(FIGS,f'{patient_id_previous}'))
-            fig                 = figure()
+            fig                 = figure(figsize=(6,6))
             fig.suptitle(f'Site={site_id}, Patient={patient_id}')
             sub_fig             = 1
         ax = fig.add_subplot(3,3,sub_fig)
@@ -66,7 +70,8 @@ for _,row in read_csv(TRAIN).iterrows():
         ax.set_title(f'{laterality} {view} {age} {cancer} {biopsy}')
         sub_fig += 1
 
-fig.savefig(join(FIGS,f'patient_id_previous'))
+fig.savefig(join(FIGS,f'{patient_id_previous}'))
 
-show()
+if args.show:
+    show()
 
