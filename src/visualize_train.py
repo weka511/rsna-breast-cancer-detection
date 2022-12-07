@@ -26,6 +26,7 @@ from matplotlib.pyplot import figure, show
 from os.path           import exists, join
 from pydicom           import dcmread
 from pandas            import read_csv
+from visualize         import trim
 
 DATA                = '../data'
 TRAIN               = join(DATA,'train.csv')
@@ -66,7 +67,7 @@ for _,row in read_csv(TRAIN).iterrows():
             sub_fig             = 1
         ax = fig.add_subplot(3,3,sub_fig)
         dataset = dcmread('../data/51088550.dcm')
-        ax.imshow(dataset.pixel_array)
+        ax.imshow(trim(dataset.pixel_array))
         ax.set_title(f'{laterality} {view} {age} {cancer} {biopsy}')
         sub_fig += 1
 
