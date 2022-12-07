@@ -411,3 +411,5 @@ TSWLatexianTemp*
 rsna-breast-cancer-detection.bib.sav.tmp
 rsna-breast-cancer-detection.pdf
 
+*.dcm
+
