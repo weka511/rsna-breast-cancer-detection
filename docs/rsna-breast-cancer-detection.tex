@@ -22,8 +22,11 @@
 
 \documentclass[]{article}
 \usepackage{caption}
+\usepackage{enumitem}
 \usepackage{float}
 \usepackage{graphicx}
+\usepackage{tocloft}
+\usepackage{url}
 
 \graphicspath{{figs/}} 
 
@@ -39,6 +42,9 @@
 RSNA Screening Mammography Breast Cancer Detection: Find breast cancers in screening mammograms. \cite{rsna-breast-cancer-detection}
 \end{abstract}
 
+\setcounter{tocdepth}{2}
+\tableofcontents
+\listoftables
 \section{Introduction}
 \begin{table}[H]
 	\begin{center}
@@ -47,14 +53,49 @@ RSNA Screening Mammography Breast Cancer Detection: Find breast cancers in scree
 			Name&Target&Revised&Complete&Remarks \\  \hline
 			Start&2022-11-28&&2022-12-07&\\ 		 \hline
 			Setup repo&2022-12-07&&2022-12-07&\\ 		 \hline
-			Draft Schedule&2022-12-07&&&WIP\\ 		 \hline
+			Draft Schedule&2022-12-07&&2022-12-07&\\ 		 \hline
 			Visualize Data&2022-12-08&&&WIP\\ 		 \hline
 			Write code for dummy submission&2022-12-07&&2022-12-07&Spike Version 4\\ 		 \hline
+			Understand output fields&2022-12-09&&&\\ \hline
 			Final Submission&2023-02-27&&&\\ 		 \hline
 		\end{tabular}
 	\end{center}
 \end{table}
 
+\section{Data Model}
+\begin{table}[H]
+	\begin{center}
+		\caption[Data Fields]{Data Fields. Some fields are omitted from Test dataset, and $prediction_id$ is used in the Test dataset only.}
+		\begin{tabular}{|l|l|p{5cm}|l|}   \hline
+			Name&Values&Description&Test\\  \hline
+			site\_id&Numeric&&Yes\\  \hline
+			patient\_id&Numeric&Part of	prediction\_id&Yes\\  \hline
+			image\_id&Numeric&Link to image file image\_id.dcm&Yes\\  \hline
+			laterality&\{L,R\}&\begin{itemize}
+				\item Left
+				\item Right
+			\end{itemize}Part of	prediction\_id&Yes\\  \hline
+			view&\{CC,MLO\}& See \cite{murphy2021mamography} \begin{itemize}
+				\item craniocaudal 
+				\item mediolateral oblique
+			\end{itemize}&Yes\\  \hline
+			age&empty or Numeric&&Yes\\  \hline
+			cancer&\{0,1\}&&No\\  \hline
+			biopsy&\{0,1\}&&No\\  \hline
+			invasive&\{0,1\}&&No\\  \hline
+			BIRADS&\{0,1,2\}&See discussion in \cite{pan2022what}\begin{enumerate}[start=0]
+				\item Need additional imaging evaluation
+				\item Negative
+				\item Benign
+			\end{enumerate}&No\\  \hline
+			implant&\{0,1\}&&Yes\\  \hline
+			density&\{empty,A,B,C,D\}&&Yes\\  \hline
+			machine\_id&Numeric&&Yes\\  \hline
+			difficult\_negative\_case&\{True, False\}&&No\\  \hline
+			prediction\_id&&Used for Test datasets only. patient\_id\_laterality, e.g. 10008\_R&Only\\  \hline
+		\end{tabular}
+	\end{center}
+\end{table}
 \bibliographystyle{unsrt}
 \addcontentsline{toc}{section}{Bibliography}
 \bibliography{rsna-breast-cancer-detection}
