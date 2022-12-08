@@ -21,6 +21,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
+'''
+    Visualize training data by patient
+'''
+
 from argparse          import ArgumentParser
 from matplotlib.pyplot import figure, show
 from os.path           import exists, join
@@ -36,7 +41,7 @@ fig                 = None
 sub_fig             = None
 counts              = {}
 
-parser = ArgumentParser('Visualize Data')
+parser = ArgumentParser('Visualize Data',__doc__)
 parser.add_argument('--show', default=False, action='store_true')
 args = parser.parse_args()
 
