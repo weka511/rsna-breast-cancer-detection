@@ -3,8 +3,8 @@
 
 Folder|File|Description
 ------|-------------------------|--------------------------------
-docs|rsna-breast-cancer-detection.tex|
-&nbsp;|rsna-breast-cancer-detection.bib|
+docs|rsna-breast-cancer-detection.bib|Bibliography
+&nbsp;|rsna-breast-cancer-detection.tex|Notes on project
 src|covariance.py|Calculate covariance matrix
 &nbsp;|download.py|Download selected data from kaggle
 &nbsp;|visualize.py|Visualize data
