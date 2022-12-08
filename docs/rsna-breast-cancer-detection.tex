@@ -24,11 +24,20 @@
 \usepackage{caption}
 \usepackage{enumitem}
 \usepackage{float}
+\usepackage[toc,acronym,nonumberlist]{glossaries}
+\setacronymstyle{long-short}
+\usepackage{glossaries-extra}
 \usepackage{graphicx}
 \usepackage{tocloft}
 \usepackage{url}
 
 \graphicspath{{figs/}} 
+
+\newacronym{gls:BIRADS}{BIRADS}{Breast imaging-reporting and data system--\cite{radiopaedia2022BIRADS}}
+\newacronym{gls:ROI}{ROI}{Region of Interest-\cite{shen2019deep}}
+\newacronym{gls:RSNA}{RSNA}{Radiological Society of North America}
+
+\makeglossaries
 
 %opening
 \title{RSNA Screening Mammography Breast Cancer Detection}
@@ -39,7 +48,7 @@
 \maketitle
 
 \begin{abstract}
-RSNA Screening Mammography Breast Cancer Detection: Find breast cancers in screening mammograms. \cite{rsna-breast-cancer-detection}
+My notes from the Kaggle competition \gls{gls:RSNA} Screening Mammography Breast Cancer Detection: find breast cancers in screening mammograms. \cite{rsna-breast-cancer-detection}
 \end{abstract}
 
 \setcounter{tocdepth}{2}
@@ -58,7 +67,7 @@ RSNA Screening Mammography Breast Cancer Detection: Find breast cancers in scree
 			Draft Schedule&2022-12-07&&2022-12-07&\\ 		 \hline
 			Visualize Data&2022-12-08&&&WIP\\ 		 \hline
 			Write code for dummy submission&2022-12-07&&2022-12-07&Spike Version 4\\ 		 \hline
-			Understand output fields&2022-12-09&&&\\ \hline
+			Understand output fields&2022-12-09&&2022-12-08&See Figure \ref{fig:covariance}\\ \hline
 			Final Submission&2023-02-27&&&\\ 		 \hline
 		\end{tabular}
 	\end{center}
@@ -85,7 +94,7 @@ RSNA Screening Mammography Breast Cancer Detection: Find breast cancers in scree
 			cancer&\{0,1\}&&No\\  \hline
 			biopsy&\{0,1\}&&No\\  \hline
 			invasive&\{0,1\}&&No\\  \hline
-			BIRADS&\{0,1,2\}&See discussion in \cite{pan2022what}\begin{enumerate}[start=0]
+			BIRADS&\{0,1,2\}&\gls{gls:BIRADS}: see discussion in \cite{pan2022what}\begin{enumerate}[start=0]
 				\item Need additional imaging evaluation
 				\item Negative
 				\item Benign
@@ -101,10 +110,19 @@ RSNA Screening Mammography Breast Cancer Detection: Find breast cancers in scree
 
 \begin{figure}[H]
 	\begin{center}
-		\caption[Covariance Matrix for outputs]{Covariance Matrix for outputs. Table had been pruned to eliminate null values.}
+		\caption[Covariance Matrix for possibly interconnected fields]{Covariance Matrix for Covariance Matrix for possibly interconnected fields: age, cancer, biopsy, invasive, BIRADS, density, and difficult\_negative\_case. The dataset has been pruned to eliminate null values.}\label{fig:covariance}
 		\includegraphics[width=\textwidth]{covariance}
 	\end{center}
 \end{figure}
+
+\section{Previous Work}
+\gls{gls:ROI}
+\cite{shen2019deep}
+
+% glossary: may need command makeglossaries.exe origins1
+\printglossaries
+
+% bibliography goes here
 
 \bibliographystyle{unsrt}
 \addcontentsline{toc}{section}{Bibliography}
