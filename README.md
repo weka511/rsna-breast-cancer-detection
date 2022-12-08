@@ -4,10 +4,12 @@
 Folder|File|Description
 ------|-------------------------|--------------------------------
 docs|rsna-breast-cancer-detection.tex|
--|rsna-breast-cancer-detection.bib|
+&nbsp;|rsna-breast-cancer-detection.bib|
 src|covariance.py|Calculate covariance matrix
--|download.py|Download selected data from kaggle
--|visualize.py|Visualize data
--|visualize_train.py|Visualize training data
--|rsna-breast-cancer-detection.wpr|WingIDE project file
-data||
+&nbsp;|download.py|Download selected data from kaggle
+&nbsp;|visualize.py|Visualize data
+&nbsp;|visualize_train.py|Visualize training data
+&nbsp;|rsna-breast-cancer-detection.wpr|WingIDE project file
+data|sample_submission.csv|Shows format for submission
+&nbsp;|test.csv|Test data (without images)
+&nbsp;|train.csv|Training data (without images)
