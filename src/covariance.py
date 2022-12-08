@@ -21,10 +21,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+'''
+    Calculate covariance matrix for possibly interconnected fields:
+    age, cancer, biopsy, invasive, BIRADS, density, and difficult_negative_case.
+'''
+
 from matplotlib.pyplot     import figure, show
 from os.path               import exists, join
 from numpy                 import cov
 from pandas                import read_csv
+from scipy.stats           import linregress
 from seaborn               import heatmap, set
 from sklearn.preprocessing import StandardScaler
 
@@ -44,11 +50,13 @@ COLS      = ['age',
              ]
 
 
-df = read_csv(TRAIN)
-df = df.dropna()
-df['density'] = df['density'].apply(lambda x:DENSITIES[x])
+df                            = read_csv(TRAIN).dropna()
+df['density']                 = df['density'].apply(lambda x:DENSITIES[x])
 df['difficult_negative_case'] = df['difficult_negative_case'].apply(lambda x:1 if x else 0)
+mean                          = df['cancer'].mean()
 
+result = linregress(df['age'],df['cancer'])
+print(f'P(Cancer)={mean}, slope={result.slope}, intercept={result.intercept}, r value={result.rvalue}')
 
 stdsc   = StandardScaler()
 X_std   = stdsc.fit_transform(df[COLS].iloc[:,range(0,len(COLS))].values)
@@ -57,16 +65,20 @@ cov_mat = cov(X_std.T)
 fig     = figure(figsize=(8,8))
 ax      = fig.add_subplot(1,1,1)
 set(font_scale=1.5)
+labels  = COLS[:-1] + ['difficult']
 heatmap(cov_mat,
+        vmin        = -1,
+        vmax        = +1,
+        cmap        = 'seismic',
         ax          = ax,
-        cbar        = True,
+        cbar        = False,
         annot       = True,
         square      = True,
         fmt         = '.2f',
         annot_kws   = {'size': 12},
-        yticklabels = COLS,
-        xticklabels = COLS)
-ax.set_title('Covariance matrix')
+        yticklabels = labels,
+        xticklabels = labels)
 
+fig.tight_layout()
 fig.savefig(join(FIGS,'covariance'))
 show()
