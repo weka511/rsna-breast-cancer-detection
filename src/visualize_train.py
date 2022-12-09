@@ -27,7 +27,7 @@
 '''
 
 from argparse          import ArgumentParser
-from matplotlib.pyplot import figure, show
+from matplotlib.pyplot import close, figure, show
 from os.path           import exists, join
 from pydicom           import dcmread
 from pandas            import read_csv
@@ -65,16 +65,22 @@ for _,row in read_csv(TRAIN).iterrows():
         print (row['site_id'],row['patient_id'],row['image_id'],row['laterality'],dcm_file)
         if patient_id!=patient_id_previous:
             patient_id_previous = patient_id
-            if fig!=None:
+            if fig!=None and sub_fig>1:
                 fig.savefig(join(FIGS,f'{patient_id_previous}'))
-            fig                 = figure(figsize=(6,6))
+                if not args.show:
+                    close(fig)
+            fig = figure(figsize=(6,6))
             fig.suptitle(f'Site={site_id}, Patient={patient_id}')
-            sub_fig             = 1
+            sub_fig = 1
         ax = fig.add_subplot(3,3,sub_fig)
-        dataset = dcmread('../data/51088550.dcm')
-        ax.imshow(trim(dataset.pixel_array))
-        ax.set_title(f'{laterality} {view} {age} {cancer} {biopsy}')
-        sub_fig += 1
+        dataset = dcmread(dcm_file)
+        try:
+            ax.imshow(trim(dataset.pixel_array))
+            ax.set_title(f'{laterality} {view} {age} {cancer} {biopsy}')
+            sub_fig += 1
+        except RuntimeError as e:
+            print (e)
+
 
 fig.savefig(join(FIGS,f'{patient_id_previous}'))
 
