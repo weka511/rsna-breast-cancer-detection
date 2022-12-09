@@ -30,9 +30,13 @@ from dicomsdl          import open
 from matplotlib.pyplot import figure, show
 from numpy             import arange, histogram, where, zeros
 
-def trim(pixel_array):
+def get_bounds(pixel_array):
     '''
         Reduce size of pixel array by trimming irrelevant pixels
+
+        Returns:
+           Bounding box: xmin,ymin,xmax,ymax
+
     '''
     def is_background(strip):
         if background_low:
@@ -42,10 +46,7 @@ def trim(pixel_array):
             summary = min(strip)
             return summary>=background
 
-    hist,bins    = histogram(pixels, density=True)
-    print (f'{file} {pixels.min()} {pixels.max()}')
-    for i in range(len(hist)):
-        print (f'\t{bins[i]:9.4g} {bins[i+1]:9.4g} {hist[i]:9.4g}')
+    hist,bins    = histogram(pixel_array, density=True)
 
     if hist[0]>hist[-1]:
         background = bins[1]
@@ -54,7 +55,6 @@ def trim(pixel_array):
         background = bins[-2]
         background_low = False
 
-    print (background)
     xmin,ymin = 0,0
     xmax,ymax = pixel_array.shape
 
@@ -78,19 +78,15 @@ if __name__=='__main__':
     parser.add_argument('--show', default=False, action='store_true')
     args        = parser.parse_args()
     for file in args.files:
-        dataset     = open(f'../data/{file}.dcm')
-        pixels  = dataset.pixelData()
-        M,N       = pixels.shape
-        Delta     = 16
-        xmin,ymin,xmax,ymax=trim(pixels)
+        dataset             = open(f'../data/{file}.dcm')
+        pixels              = dataset.pixelData()
+        xmin,ymin,xmax,ymax = get_bounds(pixels)
 
         fig  = figure(figsize=(8,8))
-        ax1  = fig.add_subplot(2,2,1)
+        ax1  = fig.add_subplot(2,1,1)
         ax1.imshow(pixels)
-        ax2  = fig.add_subplot(2,2,2)
+        ax2  = fig.add_subplot(2,1,2)
         ax2.imshow(pixels[xmin:xmax,ymin:ymax])
-        # major_ticks_x = arange(0, M, M//4)
-
 
     if args.show:
         show()

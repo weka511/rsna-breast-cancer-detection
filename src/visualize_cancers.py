@@ -31,7 +31,7 @@ from dicomsdl          import open
 from matplotlib.pyplot import figure, show
 from os.path           import exists, join
 from pandas            import read_csv
-from visualize         import trim
+from visualize         import get_bounds
 
 DATA                = '../data'
 TRAIN               = join(DATA,'train.csv')
@@ -63,13 +63,14 @@ for _,row in read_csv(TRAIN).iterrows():
             print (row['site_id'],row['patient_id'],row['image_id'],row['laterality'],dcm_file)
             try:
                 dataset = open(dcm_file)
-                trimmed = trim(dataset.pixelData())
+                pixels = dataset.pixelData()
+                xmin,ymin,xmax,ymax = get_bounds(pixels)
                 fig = figure(figsize=(6,6))
                 fig.suptitle(f'Site={site_id}, Patient={patient_id}, Image={image_id}')
                 ax1 = fig.add_subplot(2,1,1)
-                ax1.imshow(dataset.pixelData())
+                ax1.imshow(pixels)
                 ax2 = fig.add_subplot(2,1,2)
-                ax2.imshow(trimmed)
+                ax2.imshow(pixels[xmin:xmax,ymin:ymax])
                 fig.suptitle(f'{laterality} {view} {age} {cancer} {biopsy}')
                 fig.savefig(join(FIGS,f'{image_id}'))
             except RuntimeError as e:
