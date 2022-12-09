@@ -27,9 +27,9 @@
 '''
 
 from argparse          import ArgumentParser
+from dicomsdl          import open
 from matplotlib.pyplot import close, figure, show
 from os.path           import exists, join
-from pydicom           import dcmread
 from pandas            import read_csv
 from visualize         import trim
 
@@ -73,9 +73,9 @@ for _,row in read_csv(TRAIN).iterrows():
             fig.suptitle(f'Site={site_id}, Patient={patient_id}')
             sub_fig = 1
         ax = fig.add_subplot(3,3,sub_fig)
-        dataset = dcmread(dcm_file)
+        dataset = open(dcm_file)
         try:
-            ax.imshow(trim(dataset.pixel_array))
+            ax.imshow(trim(dataset.pixelData()))
             ax.set_title(f'{laterality} {view} {age} {cancer} {biopsy}')
             sub_fig += 1
         except RuntimeError as e:
