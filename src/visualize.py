@@ -28,7 +28,7 @@
 from argparse          import ArgumentParser
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
-from numpy             import arange, histogram, where, zeros
+from numpy             import all, arange, histogram, where, zeros
 
 def get_bounds(pixel_array):
     '''
@@ -39,12 +39,11 @@ def get_bounds(pixel_array):
 
     '''
     def is_background(strip):
+        '''Determine whther strip is part of background'''
         if background_low:
-            summary = max(strip)
-            return summary<=background
+            return all(strip<=background)
         else:
-            summary = min(strip)
-            return summary>=background
+            return all(strip>=background)
 
     hist,bins    = histogram(pixel_array, density=True)
 
