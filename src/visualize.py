@@ -28,38 +28,69 @@
 from argparse          import ArgumentParser
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
-from numpy             import histogram, where
+from numpy             import arange, histogram, where, zeros
 
-def trim(pixel_array,
-         xpad = 50,
-         ypad = 50):
+def trim(pixel_array):
     '''
         Reduce size of pixel array by trimming irrelevant pixels
     '''
-    n,bins    = histogram(pixel_array[:,0],bins=25)
-    threshold = 0.5*(bins[-2]+bins[-1])
-    i1,j1     = where(pixel_array<threshold)
-    return pixel_array[i1[0]-xpad:i1[-1]+xpad,:max(j1)+ypad]
+    def is_background(strip):
+        if background_low:
+            summary = max(strip)
+            return summary<=background
+        else:
+            summary = min(strip)
+            return summary>=background
+
+    hist,bins    = histogram(pixels, density=True)
+    print (f'{file} {pixels.min()} {pixels.max()}')
+    for i in range(len(hist)):
+        print (f'\t{bins[i]:9.4g} {bins[i+1]:9.4g} {hist[i]:9.4g}')
+
+    if hist[0]>hist[-1]:
+        background = bins[1]
+        background_low = True
+    else:
+        background = bins[-2]
+        background_low = False
+
+    print (background)
+    xmin,ymin = 0,0
+    xmax,ymax = pixel_array.shape
+
+
+    while is_background(pixel_array[xmin,:]):
+        xmin+= 1
+    while is_background(pixel_array[:,ymin]):
+        ymin+= 1
+    while is_background(pixel_array[xmax-1,:]):
+        xmax-=1
+    while is_background(pixel_array[:,ymax-1]):
+        ymax-= 1
+
+    return xmin,ymin,xmax,ymax
+
+
 
 if __name__=='__main__':
     parser = ArgumentParser(__doc__)
-    parser.add_argument('--file', default='51088550')
+    parser.add_argument('--files', nargs='+')
+    parser.add_argument('--show', default=False, action='store_true')
     args        = parser.parse_args()
-    dataset     = open(f'../data/{args.file}.dcm')
-    M,N         = dataset.pixelData().shape
-    one_d       = dataset.pixelData().view()
-    one_d.shape = M*N # Lots of 3044
+    for file in args.files:
+        dataset     = open(f'../data/{file}.dcm')
+        pixels  = dataset.pixelData()
+        M,N       = pixels.shape
+        Delta     = 16
+        xmin,ymin,xmax,ymax=trim(pixels)
 
-    fig  = figure(figsize=(8,8))
-    ax1  = fig.add_subplot(2,2,1)
-    ax1.imshow(dataset.pixelData())
-    ax2  = fig.add_subplot(2,2,2)
-    ax2.hist(dataset.pixelData()[:,0],bins=25)
-    ax3  = fig.add_subplot(2,2,3)
-    trimmed = trim(dataset.pixelData())
-    ax3.imshow(trimmed)
-    m,n = trimmed.shape
-    m1,n1 = dataset.pixelData().shape
-    ax3.set_title(fr'{m}$\times${n}: {m1}$\times${n1}$\rightarrow${100*m*n/(m1*n1):.0f}%')
+        fig  = figure(figsize=(8,8))
+        ax1  = fig.add_subplot(2,2,1)
+        ax1.imshow(pixels)
+        ax2  = fig.add_subplot(2,2,2)
+        ax2.imshow(pixels[xmin:xmax,ymin:ymax])
+        # major_ticks_x = arange(0, M, M//4)
 
-    show()
+
+    if args.show:
+        show()
