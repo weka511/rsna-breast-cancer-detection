@@ -29,7 +29,7 @@ from argparse          import ArgumentParser
 from cv2               import Canny
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
-from numpy             import all, arange, histogram, log, uint8, where, zeros
+from numpy             import all, arange, histogram, iinfo, log, uint8, where, zeros
 
 def get_bounds(pixel_array):
     '''
@@ -68,32 +68,36 @@ def get_bounds(pixel_array):
     while is_background(pixel_array[:,ymax-1]):
         ymax-= 1
 
-    return xmin,ymin,xmax,ymax
+    return xmin,ymin,xmax,ymax, background, background_low
 
 
 
 if __name__=='__main__':
+    epsilon = 0.000001
     parser = ArgumentParser(__doc__)
     parser.add_argument('--files', nargs='+')
     parser.add_argument('--show', default=False, action='store_true')
     args        = parser.parse_args()
     for file in args.files:
-        dataset             = open(f'../data/{file}.dcm')
-        pixels              = dataset.pixelData()
-        xmin,ymin,xmax,ymax = get_bounds(pixels)
+        dataset                        = open(f'../data/{file}.dcm')
+        pixels                         = dataset.pixelData()
+        xmin,ymin,xmax,ymax,background,background_low = get_bounds(pixels)
         m1                  = pixels[xmin:xmax,ymin:ymax].min()
         m2                  = pixels[xmin:xmax,ymin:ymax].max()
+        print (background_low, background, m1, m2)
         scaled              = (pixels[xmin:xmax,ymin:ymax]-m1)/(m2-m1)
-        p8                  = uint8(log(scaled))
+        if background_low:
+            scaled = 1-scaled
+        p8                  = uint8(log(scaled+epsilon))
         edges               = Canny(p8,32,100)
 
         fig  = figure(figsize=(8,8))
         ax1  = fig.add_subplot(2,2,1)
-        ax1.imshow(pixels)
+        ax1.imshow(pixels, cmap = 'gray')
         ax2  = fig.add_subplot(2,2,2)
-        ax2.imshow(pixels[xmin:xmax,ymin:ymax])
+        ax2.imshow(pixels[xmin:xmax,ymin:ymax], cmap = 'gray')
         ax3  = fig.add_subplot(2,2,3)
-        ax3.imshow(edges)
+        ax3.imshow(edges, cmap = 'gray')
         show()
 
     if args.show:
