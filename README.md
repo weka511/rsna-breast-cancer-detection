@@ -7,6 +7,7 @@ docs|rsna&#8209;breast&#8209;cancer&#8209;detection.bib|Bibliography
 &nbsp;|rsna&#8209;breast&#8209;cancer&#8209;detection.tex|Notes on project
 src|covariance.py|Calculate covariance matrix for possibly interconnected fields: age, cancer, biopsy, invasive, BIRADS, density, and difficult_negative_case.
 &nbsp;|download.py|Download selected data from kaggle
+&nbsp;|download_cancers.py|Download training dataets with cancers
 &nbsp;|visualize.py|Visualize data
 &nbsp;|visualize_train.py|Visualize training data
 &nbsp;|visualize_cancers.py|Visualize images with cancer spots
