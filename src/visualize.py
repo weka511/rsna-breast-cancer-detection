@@ -26,9 +26,10 @@
 '''
 
 from argparse          import ArgumentParser
+from cv2               import Canny
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
-from numpy             import all, arange, histogram, where, zeros
+from numpy             import all, arange, histogram, log, uint8, where, zeros
 
 def get_bounds(pixel_array):
     '''
@@ -80,12 +81,20 @@ if __name__=='__main__':
         dataset             = open(f'../data/{file}.dcm')
         pixels              = dataset.pixelData()
         xmin,ymin,xmax,ymax = get_bounds(pixels)
+        m1                  = pixels[xmin:xmax,ymin:ymax].min()
+        m2                  = pixels[xmin:xmax,ymin:ymax].max()
+        scaled              = (pixels[xmin:xmax,ymin:ymax]-m1)/(m2-m1)
+        p8                  = uint8(log(scaled))
+        edges               = Canny(p8,32,100)
 
         fig  = figure(figsize=(8,8))
-        ax1  = fig.add_subplot(2,1,1)
+        ax1  = fig.add_subplot(2,2,1)
         ax1.imshow(pixels)
-        ax2  = fig.add_subplot(2,1,2)
+        ax2  = fig.add_subplot(2,2,2)
         ax2.imshow(pixels[xmin:xmax,ymin:ymax])
+        ax3  = fig.add_subplot(2,2,3)
+        ax3.imshow(edges)
+        show()
 
     if args.show:
         show()
