@@ -48,10 +48,10 @@ def get_bounds(pixel_array):
     hist,bins    = histogram(pixel_array, density=True)
 
     if hist[0]>hist[-1]:
-        background = bins[1]
+        background = bins[0]
         background_low = True
     else:
-        background = bins[-2]
+        background = bins[-1]
         background_low = False
 
     xmin,ymin = 0,0
@@ -84,23 +84,28 @@ def get_centre_of_mass(pixels,step=16):
             mass_total += pixels[i,j]
     return x_total/mass_total, y_total/mass_total
 
-def get_path(xa,ya,xb,yb,scaled):
+def get_path(p0,p1,scaled):
     '''
+    Draw a path between to points, and return pxiels valjues along path
     '''
-    m,n = scaled.shape
-    if int(xa)<xb:
-        m0 = int(xa)
-        n0 = int(ya)
-        m1 = xb
-        n1 = yb
-        must_reverse = False
+    x0,y0 = p0
+    x1,y1 = p1
+    m,n   = scaled.shape
+
+    if int(x0)<x1:   # We always process in order of ascending x
+        m0 = int(x0)
+        n0 = int(y0)
+        m1 = int(x1)
+        n1 = int(y1)
+        must_reverse = False  # This allows us to return values from p0 to p1, irregardless
     else:
-        m0 = xb
-        n0 = yb
-        m1 = int(xa)
-        n1 = int(xa)
+        m0 = int(x1)
+        n0 = int(y1)
+        m1 = int(x0)
+        n1 = int(x0)
         must_reverse = True
 
+    # FEXME: this code has too many special cases for my liking
     if abs(m1-m0)>0:
         xs = [i for i in range(m0,m1)]
         ys = [min(n0 + int((i-m0)*(n1-n0)/(m1-m0)),n-1) for i in xs]
@@ -126,10 +131,11 @@ if __name__=='__main__':
     parser = ArgumentParser(__doc__)
     parser.add_argument('--files', nargs='+')
     parser.add_argument('--show', default=False, action='store_true')
-    args        = parser.parse_args()
+    args  = parser.parse_args()
+
     for file in args.files:
-        dataset                        = open(f'../data/{file}.dcm')
-        pixels                         = dataset.pixelData()
+        dataset                                       = open(f'../data/{file}.dcm')
+        pixels                                        = dataset.pixelData()
         xmin,ymin,xmax,ymax,background,background_low = get_bounds(pixels)
 
         m1       = pixels[xmin:xmax,ymin:ymax].min()
@@ -157,13 +163,10 @@ if __name__=='__main__':
                      marker    = '.',
                      linewidth = 1)
 
-            xs,ys,zs = get_path(x_c,y_c,x,y,scaled)
-
+            xs,ys,zs = get_path((x_c,y_c),(x,y),scaled)
             ax4  = fig.add_subplot(3,4,k+4)
             ax4.plot(zs,c=XKCD_COLOURS[k])
             ax4.hlines(scaled_b,0,len(zs), colors='xkcd:black',linestyles='dotted', color='xkcd:black')
-
-        # show()
 
     if args.show:
         show()
