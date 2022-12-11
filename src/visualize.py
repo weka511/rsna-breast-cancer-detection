@@ -82,7 +82,7 @@ def get_centre_of_mass(pixels,step=16):
     return x_total/mass_total, y_total/mass_total
 
 if __name__=='__main__':
-    epsilon = 0.000001
+    colours = ['xkcd:red','xkcd:green','xkcd:blue','xkcd:yellow','xkcd:cyan','xkcd:magenta','xkcd:purple','xkcd:pink']
     parser = ArgumentParser(__doc__)
     parser.add_argument('--files', nargs='+')
     parser.add_argument('--show', default=False, action='store_true')
@@ -95,21 +95,25 @@ if __name__=='__main__':
         m1       = pixels[xmin:xmax,ymin:ymax].min()
         m2       = pixels[xmin:xmax,ymin:ymax].max()
         scaled   = (pixels[xmin:xmax,ymin:ymax]-m1)/(m2-m1)
+        scaled_b = (background - m1)/(m2-m1)
         x_c, y_c = get_centre_of_mass(scaled)
         m,n      = scaled.shape
-        ends     = [[0,0],[0,n],[m,n],[m,0]]
+        ends     = [[0,0],[0,n],[m,n],[m,0],[int(x_c),n],
+                    [0,int(y_c)],[m,int(y_c)],[int(x_c),0]]
 
-        fig  = figure(figsize=(8,8))
-        ax1  = fig.add_subplot(2,2,1)
+        fig  = figure(figsize=(12,8))
+        ax1  = fig.add_subplot(3,4,1)
         ax1.imshow(pixels, cmap = 'gray')
-        ax2  = fig.add_subplot(2,2,2)
+        ax2  = fig.add_subplot(3,4,2)
         ax2.imshow(pixels[xmin:xmax,ymin:ymax], cmap = 'gray')
-        ax3  = fig.add_subplot(2,2,3)
+        ax3  = fig.add_subplot(3,4,3)
         ax3.imshow(scaled, cmap = 'gray')
 
-        ax4  = fig.add_subplot(2,2,4)
-        for x,y in ends:
-            ax3.plot([y_c,y],[x_c,x])
+        for k,(x,y) in enumerate(ends):
+            ax3.plot([y_c,y],[x_c,x],
+                     c         = colours[k],
+                     marker    = '.',
+                     linewidth = 1)
             if int(x_c)<x:
                 m0 = int(x_c)
                 n0 = int(y_c)
@@ -123,9 +127,9 @@ if __name__=='__main__':
             xs = [i for i in range(m0,m1)]
             ys = [min(n0 + int((i-m0)*(n1-n0)/(m1-m0)),n-1) for i in xs]
             zs = [scaled[i,j] for (i,j) in zip(xs,ys)]
-            ax3.scatter(ys,xs)
-            ax4.plot(zs)
-
+            ax4  = fig.add_subplot(3,4,k+4)
+            ax4.plot(zs,c=colours[k])
+            ax4.hlines(scaled_b,0,len(zs), colors='xkcd:black',linestyles='dotted', color='xkcd:black')
 
         show()
 
