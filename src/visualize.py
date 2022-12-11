@@ -26,10 +26,9 @@
 '''
 
 from argparse          import ArgumentParser
-from cv2               import Canny
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
-from numpy             import all, arange, histogram, iinfo, log, uint8, where, zeros
+from numpy             import all, arange, histogram, log,  where, zeros
 
 def get_bounds(pixel_array):
     '''
@@ -70,7 +69,17 @@ def get_bounds(pixel_array):
 
     return xmin,ymin,xmax,ymax, background, background_low
 
-
+def get_centre_of_mass(pixels,step=16):
+    x_total    = 0
+    y_total    = 0
+    mass_total = 0
+    m,n        = pixels.shape
+    for i in range(0,m,step):
+        for j in range(0,n,step):
+            x_total    += i*pixels[i,j]
+            y_total    += j*pixels[i,j]
+            mass_total += pixels[i,j]
+    return x_total/mass_total, y_total/mass_total
 
 if __name__=='__main__':
     epsilon = 0.000001
@@ -82,14 +91,13 @@ if __name__=='__main__':
         dataset                        = open(f'../data/{file}.dcm')
         pixels                         = dataset.pixelData()
         xmin,ymin,xmax,ymax,background,background_low = get_bounds(pixels)
-        m1                  = pixels[xmin:xmax,ymin:ymax].min()
-        m2                  = pixels[xmin:xmax,ymin:ymax].max()
-        print (background_low, background, m1, m2)
-        scaled              = (pixels[xmin:xmax,ymin:ymax]-m1)/(m2-m1)
-        if background_low:
-            scaled = 1-scaled
-        p8                  = uint8(log(scaled+epsilon))
-        edges               = Canny(p8,32,100)
+
+        m1       = pixels[xmin:xmax,ymin:ymax].min()
+        m2       = pixels[xmin:xmax,ymin:ymax].max()
+        scaled   = (pixels[xmin:xmax,ymin:ymax]-m1)/(m2-m1)
+        x_c, y_c = get_centre_of_mass(scaled)
+        m,n      = scaled.shape
+        ends     = [[0,0],[0,n],[m,n],[m,0]]
 
         fig  = figure(figsize=(8,8))
         ax1  = fig.add_subplot(2,2,1)
@@ -97,7 +105,28 @@ if __name__=='__main__':
         ax2  = fig.add_subplot(2,2,2)
         ax2.imshow(pixels[xmin:xmax,ymin:ymax], cmap = 'gray')
         ax3  = fig.add_subplot(2,2,3)
-        ax3.imshow(edges, cmap = 'gray')
+        ax3.imshow(scaled, cmap = 'gray')
+
+        ax4  = fig.add_subplot(2,2,4)
+        for x,y in ends:
+            ax3.plot([y_c,y],[x_c,x])
+            if int(x_c)<x:
+                m0 = int(x_c)
+                n0 = int(y_c)
+                m1 = x
+                n1 = y
+            else:
+                m0 = x
+                n0 = y
+                m1 = int(x_c)
+                n1 = int(y_c)
+            xs = [i for i in range(m0,m1)]
+            ys = [min(n0 + int((i-m0)*(n1-n0)/(m1-m0)),n-1) for i in xs]
+            zs = [scaled[i,j] for (i,j) in zip(xs,ys)]
+            ax3.scatter(ys,xs)
+            ax4.plot(zs)
+
+
         show()
 
     if args.show:
