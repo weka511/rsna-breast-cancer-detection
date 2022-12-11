@@ -70,6 +70,9 @@ def get_bounds(pixel_array):
     return xmin,ymin,xmax,ymax, background, background_low
 
 def get_centre_of_mass(pixels,step=16):
+    '''
+    Calculate weighted average of coordinates within image, weighted by pixel intensity
+    '''
     x_total    = 0
     y_total    = 0
     mass_total = 0
@@ -81,8 +84,45 @@ def get_centre_of_mass(pixels,step=16):
             mass_total += pixels[i,j]
     return x_total/mass_total, y_total/mass_total
 
+def get_path(xa,ya,xb,yb,scaled):
+    '''
+    '''
+    m,n = scaled.shape
+    if int(xa)<xb:
+        m0 = int(xa)
+        n0 = int(ya)
+        m1 = xb
+        n1 = yb
+        must_reverse = False
+    else:
+        m0 = xb
+        n0 = yb
+        m1 = int(xa)
+        n1 = int(xa)
+        must_reverse = True
+
+    if abs(m1-m0)>0:
+        xs = [i for i in range(m0,m1)]
+        ys = [min(n0 + int((i-m0)*(n1-n0)/(m1-m0)),n-1) for i in xs]
+    else:
+        if n0>n1:
+            n0,n1=n1,n0
+            m0,m1=m1,m0
+        ys = [j for j in range(n0,n1)]
+        xs = [min(m0 + int((j-n0)*(m1-m0)/(n1-n0)),m-1) for j in ys]
+
+    if must_reverse:
+        xs = xs[::-1]
+        ys = ys[::-1]
+
+    return xs,ys,[scaled[i,j] for (i,j) in zip(xs,ys) if i<m and j < n] #FIXME - shouldm't need if
+
 if __name__=='__main__':
-    colours = ['xkcd:red','xkcd:green','xkcd:blue','xkcd:yellow','xkcd:cyan','xkcd:magenta','xkcd:purple','xkcd:pink']
+    XKCD_COLOURS = [
+        'xkcd:purple',     'xkcd:green',
+        'xkcd:blue',       'xkcd:pink',
+        'xkcd:brown',      'xkcd:red',
+        'xkcd:light blue',  'xkcd:teal']
     parser = ArgumentParser(__doc__)
     parser.add_argument('--files', nargs='+')
     parser.add_argument('--show', default=False, action='store_true')
@@ -98,8 +138,10 @@ if __name__=='__main__':
         scaled_b = (background - m1)/(m2-m1)
         x_c, y_c = get_centre_of_mass(scaled)
         m,n      = scaled.shape
-        ends     = [[0,0],[0,n],[m,n],[m,0],[int(x_c),n],
-                    [0,int(y_c)],[m,int(y_c)],[int(x_c),0]]
+        ends     = [[0,0], [int(x_c),0],
+                    [m,0], [m,int(y_c)],
+                    [m,n], [int(x_c),n],
+                    [0,n], [0,int(y_c)]]
 
         fig  = figure(figsize=(12,8))
         ax1  = fig.add_subplot(3,4,1)
@@ -111,27 +153,17 @@ if __name__=='__main__':
 
         for k,(x,y) in enumerate(ends):
             ax3.plot([y_c,y],[x_c,x],
-                     c         = colours[k],
+                     c         = XKCD_COLOURS[k],
                      marker    = '.',
                      linewidth = 1)
-            if int(x_c)<x:
-                m0 = int(x_c)
-                n0 = int(y_c)
-                m1 = x
-                n1 = y
-            else:
-                m0 = x
-                n0 = y
-                m1 = int(x_c)
-                n1 = int(y_c)
-            xs = [i for i in range(m0,m1)]
-            ys = [min(n0 + int((i-m0)*(n1-n0)/(m1-m0)),n-1) for i in xs]
-            zs = [scaled[i,j] for (i,j) in zip(xs,ys)]
+
+            xs,ys,zs = get_path(x_c,y_c,x,y,scaled)
+
             ax4  = fig.add_subplot(3,4,k+4)
-            ax4.plot(zs,c=colours[k])
+            ax4.plot(zs,c=XKCD_COLOURS[k])
             ax4.hlines(scaled_b,0,len(zs), colors='xkcd:black',linestyles='dotted', color='xkcd:black')
 
-        show()
+        # show()
 
     if args.show:
         show()
