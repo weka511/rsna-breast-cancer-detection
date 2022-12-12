@@ -104,7 +104,7 @@ def get_centre_of_mass(pixels,step=16):
 
 def get_path(p0,p1,scaled):
     '''
-    Draw a path between to points, and return pxiels valjues along path
+    Draw a path between to points, and return pixels values along path
     '''
     x0,y0 = p0
     x1,y1 = p1
@@ -120,7 +120,7 @@ def get_path(p0,p1,scaled):
         m0 = int(x1)
         n0 = int(y1)
         m1 = int(x0)
-        n1 = int(x0)
+        n1 = int(y0)
         must_reverse = True
 
     # FIXME: this code has too many special cases for my liking
@@ -138,7 +138,36 @@ def get_path(p0,p1,scaled):
         xs = xs[::-1]
         ys = ys[::-1]
 
-    return xs,ys,[scaled[i,j] for (i,j) in zip(xs,ys) if i<m and j < n] #FIXME - shouldm't need if
+    return xs,ys,[scaled[i,j] for (i,j) in zip(xs,ys) if i<m and j < n] #FIXME - shouldn't need if
+
+
+def get_transitions(xs,ys,zs,pixels,background,epsilon=0.001):
+    '''
+    Fined transitions between background and foreground
+    '''
+    seeking_background = True
+    transitions        = []
+    runs               = []
+    index              = len(zs) - 1
+    run_length         = 0
+    while index>0:
+        if seeking_background:
+            while index>0 and zs[index]>=background-epsilon:
+                index-=1
+                run_length+=1
+        else:
+            while index>0 and zs[index]<background-epsilon:
+                index-=1
+                run_length+=1
+        transitions.append(index)
+        runs.append(run_length)
+        run_length = 0
+        if index==0:
+            return transitions,runs
+        seeking_background = not seeking_background
+        index -= 1
+    return transitions,runs
+
 
 if __name__=='__main__':
     XKCD_COLOURS = [
@@ -149,6 +178,7 @@ if __name__=='__main__':
     parser = ArgumentParser(__doc__)
     parser.add_argument('--files', nargs='+')
     parser.add_argument('--show', default=False, action='store_true')
+    parser.add_argument('--step', default=False, action='store_true')
     args  = parser.parse_args()
 
     for file in args.files:
@@ -172,7 +202,7 @@ if __name__=='__main__':
         for k,(x,y) in enumerate(ends):
             ax1.plot([y_c,y],[x_c,x],
                      c         = XKCD_COLOURS[k],
-                     marker    = '.',
+                     marker    = '+',
                      linewidth = 1)
 
             xs,ys,zs = get_path((x_c,y_c),(x,y),scaled_pixels)
@@ -182,7 +212,19 @@ if __name__=='__main__':
                        colors     = 'xkcd:black',
                        linestyles = 'dotted',
                        color      = 'xkcd:black')
-        show()
+            if len(zs)>256:  #FIXME magic number
+                transitions,runs = get_transitions(xs,ys,zs,pixels,scaled_background)
+                print (k, transitions, runs)
+                if len(transitions)==2 and runs[0]>10 and runs[1]>10:  #FIXME magic number
+                    x0 = xs[transitions[0]]
+                    y0 = ys[transitions[0]]
+                    ax1.scatter([y0],[x0],
+                                c      = XKCD_COLOURS[k],
+                                marker = 'x')
 
-    if args.show:
+
+        if args.step:
+            show()
+
+    if args.show and not args.step:
         show()
