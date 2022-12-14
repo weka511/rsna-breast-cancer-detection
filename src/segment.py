@@ -21,17 +21,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from abc               import ABC,abstractmethod
+from abc               import ABC, abstractmethod
 from argparse          import ArgumentParser
 from loader            import Loader
 from matplotlib.pyplot import close, figure, show
 from numpy             import all, any, flip
 
 class Segmenter(ABC):
+    Segmenters = {}
+
+    @classmethod
+    def Register(cls,key,segmenter):
+        Segmenter.Segmenters[key] = segmenter
+
     @classmethod
     def Create(cls,view):
-        if view=='CC':
-            return CranioCaudalSegmenter()
+        if view in Segmenter.Segmenters:
+            return Segmenter.Segmenters[view]
+
     @abstractmethod
     def segment(self,pixels,laterality='L'):
         ...
@@ -39,12 +46,17 @@ class Segmenter(ABC):
 class CranioCaudalSegmenter(Segmenter):
     def __init__(self):
         pass
+
     def segment(self,pixels,laterality='L'):
         pixels = self.standardize_orientation(pixels,axis=1)
+        m0,n0,m1,n1 = segmenter.get_bounds(pixels)
+        return pixels [m0:m1,n0:n1]
+
     def standardize_orientation(self,pixels,laterality='L'):
         if laterality=='R':
             pixels = flip(pixels,axis=1)
         return pixels
+
     def get_bounds(self,pixels,epsilon=0.01):
         threshold = pixels.max() - epsilon
         m,n       = pixels.shape
@@ -52,11 +64,11 @@ class CranioCaudalSegmenter(Segmenter):
         n1        = 1
         m1        = m-1
 
-        while n1<n: #red
+        while n1<n:
             if all(pixels[: ,n1]>threshold):
                 break
             n1 += 1
-        while m0<m: #green
+        while m0<m:
             if any(pixels[m0,n0:n1]<threshold):
                 break
             m0 += 1
@@ -73,6 +85,7 @@ class  MediolateralObliqueSegmenter(Segmenter):
         pass
 
 if __name__=='__main__':
+    Segmenter.Register('CC', CranioCaudalSegmenter())
     parser = ArgumentParser(__doc__)
     parser.add_argument('image_ids', nargs='+', type=int)
     parser.add_argument('--show', default=False, action='store_true')
@@ -91,9 +104,15 @@ if __name__=='__main__':
         ax1      = fig.add_subplot(1,2,1)
         fig.suptitle(f'{image_id} {laterality} {view}')
         ax1.imshow(pixels, cmap = 'gray')
-        ax1.axvline(n1,c='xkcd:red',linestyle='dotted')
-        ax1.axhline(m0,c='xkcd:red',linestyle='dotted')
-        ax1.axhline(m1,c='xkcd:red',linestyle='dotted')
+        ax1.axvline(n1,
+                    c         = 'xkcd:blue',
+                    linestyle = 'dotted')
+        ax1.axhline(m0,
+                    c         = 'xkcd:blue',
+                    linestyle = 'dotted')
+        ax1.axhline(m1,
+                    c         = 'xkcd:blue',
+                    linestyle = 'dotted')
         ax2 = fig.add_subplot(1,2,2)
         ax2.imshow(pixels[m0:m1,n0:n1], cmap = 'gray')
         if args.step:
