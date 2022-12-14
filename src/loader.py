@@ -50,15 +50,16 @@ class Loader:
         assert m==dataset.getDataElement('Rows').value() and n==dataset.getDataElement('Columns').value()
         if dataset.getDataElement('PhotometricInterpretation').value()=='MONOCHROME2':
             pixels = pixels.max() - pixels
-        if dataset.getDataElement('ImageLaterality').value()=='R':
-            pixels = flip(pixels,axis=1)
-        return pixels,dataset.getDataElement('Rows')
+        # if dataset.getDataElement('ImageLaterality').value()=='R':
+            # pixels = flip(pixels,axis=1)
+        return pixels,dataset.getDataElement('ImageLaterality').value(),row['laterality'].values[0],row['view'].values[0]
 
 
 if __name__=='__main__':
     loader   = Loader()
-    pixels,_ = loader.get_image(image_id=388811999)
+    pixels,laterality,laterality2,view = loader.get_image(image_id=388811999)
     fig      = figure(figsize=(12,8))
     ax1      = fig.add_subplot(1,1,1)
     ax1.imshow(pixels, cmap = 'gray')
+    fig.suptitle(f'{laterality} {laterality2} {view}')
     show()
