@@ -21,6 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+'''Read image from restructured data on drive D'''
+
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
 from os.path           import exists, join
@@ -28,18 +30,23 @@ from pandas            import read_csv
 
 
 class Loader:
+    '''
+    This class loads images and metadata
+    '''
     def __init__(self,
                  path = r'D:\data\rsna-breast-cancer-detection',
                  dataset = 'train'):
         self.images_path   = join(path,dataset)
         self.master = read_csv(join(path,f'{dataset}.csv'))
 
-    def get_image(self,image_id=None,patient_id=None):
+    def get_image(self,
+                  image_id   = None,
+                  patient_id = None):
         if patient_id==None:
             row = self.master[self.master['image_id']==image_id]
             patient_id = int(row['patient_id'])
-        path = join(self.images_path,str(patient_id),f'{image_id}.dcm')
-        dataset = open(path)
+
+        dataset                   = open(join(self.images_path,str(patient_id),f'{image_id}.dcm'))
         pixels                    = dataset.pixelData()
         PhotometricInterpretation = dataset.getDataElement('PhotometricInterpretation').value()
         SamplesPerPixel           = dataset.getDataElement('SamplesPerPixel').value()
