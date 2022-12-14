@@ -31,33 +31,38 @@ class Segmenter(ABC):
     Segmenters = {}
 
     @classmethod
-    def Register(cls,key,segmenter):
-        Segmenter.Segmenters[key] = segmenter
+    def Register(cls,segmenter):
+        Segmenter.Segmenters[segmenter.key] = segmenter
 
     @classmethod
     def Create(cls,view):
         if view in Segmenter.Segmenters:
             return Segmenter.Segmenters[view]
 
-    @abstractmethod
     def segment(self,pixels,laterality='L'):
+        pixels      = self._standardize_orientation(pixels,axis=1)
+        m0,n0,m1,n1 = segmenter._get_bounds(pixels)
+        return pixels [m0:m1,n0:n1]
+
+    @abstractmethod
+    def _standardize_orientation(self,pixels,laterality='L'):
+        '''Ensure tissue is at left hand of image'''
+        ...
+
+    @abstractmethod
+    def _get_bounds(self,pixels,epsilon=0.01):
         ...
 
 class CranioCaudalSegmenter(Segmenter):
     def __init__(self):
-        pass
+        self.key ='CC'
 
-    def segment(self,pixels,laterality='L'):
-        pixels = self.standardize_orientation(pixels,axis=1)
-        m0,n0,m1,n1 = segmenter.get_bounds(pixels)
-        return pixels [m0:m1,n0:n1]
-
-    def standardize_orientation(self,pixels,laterality='L'):
+    def _standardize_orientation(self,pixels,laterality='L'):
         if laterality=='R':
             pixels = flip(pixels,axis=1)
         return pixels
 
-    def get_bounds(self,pixels,epsilon=0.01):
+    def _get_bounds(self,pixels,epsilon=0.01):
         threshold = pixels.max() - epsilon
         m,n       = pixels.shape
         m0,n0     = 0,0
@@ -80,41 +85,75 @@ class CranioCaudalSegmenter(Segmenter):
 
 class  MediolateralObliqueSegmenter(Segmenter):
     def __init__(self):
-        pass
+        self.key = 'MLO'
+
     def segment(self,pixels,laterality='L'):
         pass
 
+    def _standardize_orientation(self,pixels,laterality='L'):
+        m,n = pixels.shape
+        m0, n0 = self._get_centre_of_mass(pixels)
+        if n0>n/2:
+            pixels = flip(pixels,axis=1)
+        return pixels
+
+    def _get_bounds(self,pixels,epsilon=0.01):
+        pass
+
+    def _get_centre_of_mass(self,pixels,step=16):
+        '''
+        Calculate weighted average of coordinates within image, weighted by pixel intensity
+        '''
+        x_total    = 0
+        y_total    = 0
+        mass_total = 0
+        m,n        = pixels.shape
+        background = pixels.max()
+        for i in range(0,m,step):
+            for j in range(0,n,step):
+                mass        = background - pixels[i,j]
+                x_total    += i*mass
+                y_total    += j*mass
+                mass_total += mass
+        return int(x_total/mass_total), int(y_total/mass_total)
+
 if __name__=='__main__':
-    Segmenter.Register('CC', CranioCaudalSegmenter())
+    Segmenter.Register(CranioCaudalSegmenter())
+    Segmenter.Register(MediolateralObliqueSegmenter())
     parser = ArgumentParser(__doc__)
     parser.add_argument('image_ids', nargs='+', type=int)
     parser.add_argument('--show', default=False, action='store_true')
     parser.add_argument('--step', default=False, action='store_true')
-    args  = parser.parse_args()
+    args   = parser.parse_args()
+    loader = Loader()
 
-    loader   = Loader()
     for image_id in args.image_ids:
         pixels,laterality,view = loader.get_image(image_id=image_id)
         segmenter              = Segmenter.Create(view)
-        if segmenter==None: continue
-        pixels      = segmenter.standardize_orientation(pixels,laterality=laterality)
-        m0,n0,m1,n1 = segmenter.get_bounds(pixels)
-
-        fig      = figure(figsize=(12,8))
-        ax1      = fig.add_subplot(1,2,1)
+        fig                    = figure(figsize=(12,8))
+        ax1                    = fig.add_subplot(1,2,1)
         fig.suptitle(f'{image_id} {laterality} {view}')
+        pixels      = segmenter._standardize_orientation(pixels,laterality=laterality)
         ax1.imshow(pixels, cmap = 'gray')
-        ax1.axvline(n1,
-                    c         = 'xkcd:blue',
-                    linestyle = 'dotted')
-        ax1.axhline(m0,
-                    c         = 'xkcd:blue',
-                    linestyle = 'dotted')
-        ax1.axhline(m1,
-                    c         = 'xkcd:blue',
-                    linestyle = 'dotted')
-        ax2 = fig.add_subplot(1,2,2)
-        ax2.imshow(pixels[m0:m1,n0:n1], cmap = 'gray')
+
+        if segmenter.key=='CC':
+
+            m0,n0,m1,n1 = segmenter._get_bounds(pixels)
+
+            ax1.axvline(n1,
+                        c         = 'xkcd:blue',
+                        linestyle = 'dotted')
+            ax1.axhline(m0,
+                        c         = 'xkcd:blue',
+                        linestyle = 'dotted')
+            ax1.axhline(m1,
+                        c         = 'xkcd:blue',
+                        linestyle = 'dotted')
+            ax2 = fig.add_subplot(1,2,2)
+            ax2.imshow(pixels[m0:m1,n0:n1], cmap = 'gray')
+        else:
+            pass
+
         if args.step:
             show()
         else:
