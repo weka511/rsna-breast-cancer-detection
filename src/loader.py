@@ -25,6 +25,7 @@
 
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
+from os                import walk
 from os.path           import exists, join
 from pandas            import read_csv
 
@@ -42,6 +43,15 @@ class Loader:
     def get_image(self,
                   image_id   = None,
                   patient_id = None):
+        '''
+        Load specified image.
+        Invert if necessary so PhotometricInterpretation is MONOCHROME1 (i.e. background is white)
+
+        Returns:
+             pixels      The pixels representing  the image
+             laterality  L or R
+             view        CC or MLO
+        '''
         if patient_id==None:
             row = self.master[self.master['image_id']==image_id]
             patient_id = int(row['patient_id'])
@@ -63,6 +73,13 @@ class Loader:
         assert laterality == (laterality2,)
         return pixels,laterality2,view
 
+def get_all_images(path = r'D:\data\rsna-breast-cancer-detection',
+                   dataset = 'train'):
+    '''A generator for iterating through all images'''
+    for dirpath, dirnames, filenames in walk(join(path,dataset)):
+        for filename in filenames:
+            parts = filename.split('.')
+            yield int(parts[0])
 
 if __name__=='__main__':
     loader   = Loader()

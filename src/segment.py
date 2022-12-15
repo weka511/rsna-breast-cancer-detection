@@ -24,9 +24,11 @@
 '''Get rid of irrelevant pixels and focus on tissue'''
 from abc               import ABC, abstractmethod
 from argparse          import ArgumentParser
-from loader            import Loader
+from loader            import Loader, get_all_images
 from matplotlib.pyplot import close, figure, show
 from numpy             import all, any, argmax, argmin, count_nonzero, flip
+from os.path           import join
+from os                import walk
 
 class Segmenter(ABC):
     '''Get rid of irrelevant pixels and focus on tissue'''
@@ -133,16 +135,17 @@ class  MediolateralObliqueSegmenter(Segmenter):
         return int(x_total/mass_total), int(y_total/mass_total)
 
 if __name__=='__main__':
+    FIGS      = '../docs/figs'
     Segmenter.Register(CranioCaudalSegmenter())
     Segmenter.Register(MediolateralObliqueSegmenter())
     parser = ArgumentParser(__doc__)
-    parser.add_argument('image_ids', nargs='+', type=int)
+    parser.add_argument('image_ids', nargs='*', type=int)
     parser.add_argument('--show', default=False, action='store_true')
     parser.add_argument('--step', default=False, action='store_true')
     args   = parser.parse_args()
     loader = Loader()
-
-    for image_id in args.image_ids:
+    image_ids = args.image_ids if len(args.image_ids)>0 else get_all_images()
+    for image_id in image_ids:
         pixels,laterality,view = loader.get_image(image_id=image_id)
         segmenter              = Segmenter.Create(view)
         fig                    = figure(figsize=(12,8))
@@ -164,7 +167,7 @@ if __name__=='__main__':
                     linestyle = 'dotted')
         ax2 = fig.add_subplot(1,2,2)
         ax2.imshow(pixels[m0:m1,n0:n1], cmap = 'gray')
-
+        fig.savefig(join(FIGS,f'segment-{image_id}'))
         if args.step:
             show()
         else:
