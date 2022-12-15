@@ -60,15 +60,17 @@ My notes from the Kaggle competition \gls{gls:RSNA} Screening Mammography Breast
 \begin{table}[H]
 	\begin{center}
 		\caption{Schedule}
-		\begin{tabular}{|l|l|l|l|l|} \hline
-			Name&Target&Revised&Complete&Remarks \\  \hline
-			Start&2022-11-28&&2022-12-07&\\ 		 \hline
-			Setup repo&2022-12-07&&2022-12-07&\\ 		 \hline
-			Draft Schedule&2022-12-07&&2022-12-07&\\ 		 \hline
-			Visualize Data&2022-12-08&&&WIP\\ 		 \hline
-			Write code for dummy submission&2022-12-07&&2022-12-07&Spike Version 4\\ 		 \hline
-			Understand output fields&2022-12-09&&2022-12-08&See Figure \ref{fig:covariance}\\ \hline
-			Final Submission&2023-02-27&&&\\ 		 \hline
+		\begin{tabular}{|p{4cm}|l|l|p{4cm}|} \hline
+			Name&Target&Complete&Remarks \\  \hline
+			Start&2022-11-28&2022-12-07&\\ 		 \hline
+			Setup repo&2022-12-07&2022-12-07&\\ 		 \hline
+			Draft Schedule&2022-12-07&2022-12-07&\\ 		 \hline
+			Visualize Data&2022-12-08&2022-12-08&Remaining work included in ``Segment Images''\\ 		 \hline
+			Segment images&2022-12-16&&WIP\\ 		 \hline
+			Write code for dummy submission&2022-12-07&2022-12-07&Spike Version 4\\ 		 \hline
+			Understand output fields&2022-12-09&2022-12-08&See Figure \ref{fig:covariance}\\ \hline
+			Read ``Effect of the Pixel Interpolation Method for Downsampling Medical Images on Deep Learning Accuracy'' \cite{hirahara2021effect}&2022-12-16&&\\\hline
+			Final Submission&2023-02-27&&\\ 		 \hline
 		\end{tabular}
 	\end{center}
 \end{table}
@@ -94,7 +96,7 @@ My notes from the Kaggle competition \gls{gls:RSNA} Screening Mammography Breast
 			cancer&\{0,1\}&&No\\  \hline
 			biopsy&\{0,1\}&&No\\  \hline
 			invasive&\{0,1\}&&No\\  \hline
-			BIRADS&\{0,1,2\}&\gls{gls:BIRADS}: see discussion in \cite{pan2022what}\begin{enumerate}[start=0]
+			\gls{gls:BIRADS}&\{0,1,2\}&See discussion in \cite{pan2022what}\begin{enumerate}[start=0]
 				\item Need additional imaging evaluation
 				\item Negative
 				\item Benign
@@ -110,8 +112,25 @@ My notes from the Kaggle competition \gls{gls:RSNA} Screening Mammography Breast
 
 \begin{figure}[H]
 	\begin{center}
-		\caption[Covariance Matrix for possibly interconnected fields]{Covariance Matrix for Covariance Matrix for possibly interconnected fields: age, cancer, biopsy, invasive, BIRADS, density, and difficult\_negative\_case. The dataset has been pruned to eliminate null values.}\label{fig:covariance}
+		\caption[Covariance Matrix for possibly interconnected fields]{Covariance Matrix for Covariance Matrix for possibly interconnected fields: age, cancer, biopsy, invasive, \gls{gls:BIRADS}, density, and difficult\_negative\_case. The dataset has been pruned to eliminate null values.}\label{fig:covariance}
 		\includegraphics[width=\textwidth]{covariance}
+	\end{center}
+\end{figure}
+
+\section{Segmentation}
+
+\begin{enumerate}
+	\item Standardize images:\begin{enumerate}
+		\item Invert pixels if necessary;
+		\item generate bounding box;
+		\item standardize laterality.
+	\end{enumerate}
+	\item Draw a box around tissue
+\end{enumerate}
+\begin{figure}[H]
+	\begin{center}
+		\caption[Segmentation Algorithm]{Segmentation Algorithm.}
+		\includegraphics[width=\textwidth]{segment-388811999}
 	\end{center}
 \end{figure}
 
