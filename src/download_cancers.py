@@ -59,7 +59,6 @@ with open('download_cancers.bat','w') as out:
         difficult_negative_case = row['difficult_negative_case']
         path                    = '../data'
         if cancer==1:
-            dcm_file  = join(DATA,f'{image_id}.dcm')
-        out.write(f'kaggle competitions download -f train_images/{patient_id}/{image_id}.dcm  -p {path} rsna-breast-cancer-detection\n')
+            out.write(f'kaggle competitions download -f train_images/{patient_id}/{image_id}.dcm  -p {path} rsna-breast-cancer-detection\n')
 
 
