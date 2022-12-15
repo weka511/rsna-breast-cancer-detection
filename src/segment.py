@@ -21,25 +21,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+'''Get rid of irrelevant pixels and focus on tissue'''
 from abc               import ABC, abstractmethod
 from argparse          import ArgumentParser
 from loader            import Loader
 from matplotlib.pyplot import close, figure, show
-from numpy             import all, any, flip
+from numpy             import all, any, argmax, argmin, count_nonzero, flip
 
 class Segmenter(ABC):
+    '''Get rid of irrelevant pixels and focus on tissue'''
+
     Segmenters = {}
 
     @classmethod
     def Register(cls,segmenter):
+        '''Store reference to a segmenter so it can be located'''
         Segmenter.Segmenters[segmenter.key] = segmenter
 
     @classmethod
     def Create(cls,view):
+        '''Find appropriate segmenter'''
         if view in Segmenter.Segmenters:
             return Segmenter.Segmenters[view]
 
     def segment(self,pixels,laterality='L'):
+        '''Method to get rid of irrelevant pixels and focus on tissue'''
         pixels      = self._standardize_orientation(pixels,axis=1)
         m0,n0,m1,n1 = segmenter._get_bounds(pixels)
         return pixels [m0:m1,n0:n1]
@@ -54,6 +60,8 @@ class Segmenter(ABC):
         ...
 
 class CranioCaudalSegmenter(Segmenter):
+    '''Get rid of irrelevant pixels from Cranio Caudal View and focus on tissue'''
+
     def __init__(self):
         self.key ='CC'
 
@@ -84,11 +92,10 @@ class CranioCaudalSegmenter(Segmenter):
         return m0,n0,m1,n1
 
 class  MediolateralObliqueSegmenter(Segmenter):
+    '''Get rid of irrelevant pixels from Mediolateral Oblique View and focus on tissue'''
+
     def __init__(self):
         self.key = 'MLO'
-
-    def segment(self,pixels,laterality='L'):
-        pass
 
     def _standardize_orientation(self,pixels,laterality='L'):
         m,n = pixels.shape
@@ -98,11 +105,19 @@ class  MediolateralObliqueSegmenter(Segmenter):
         return pixels
 
     def _get_bounds(self,pixels,epsilon=0.01):
-        pass
+        threshold = pixels.max() - epsilon
+        m,n       = pixels.shape
+        m0,n0     = 0,0
+        n1        = n-1
+        nfigure   = count_nonzero(pixels<threshold,axis=1)
+        n_max     = argmax(nfigure)
+        n1 = nfigure[n_max]
+        m1        = argmin(nfigure[n_max:-10]) + n_max
+        return m0,n0,m1,n1
 
     def _get_centre_of_mass(self,pixels,step=16):
         '''
-        Calculate weighted average of coordinates within image, weighted by pixel intensity
+        Calculate average of coordinates within image, weighted by pixel intensity
         '''
         x_total    = 0
         y_total    = 0
@@ -136,23 +151,19 @@ if __name__=='__main__':
         pixels      = segmenter._standardize_orientation(pixels,laterality=laterality)
         ax1.imshow(pixels, cmap = 'gray')
 
-        if segmenter.key=='CC':
+        m0,n0,m1,n1 = segmenter._get_bounds(pixels)
 
-            m0,n0,m1,n1 = segmenter._get_bounds(pixels)
-
-            ax1.axvline(n1,
-                        c         = 'xkcd:blue',
-                        linestyle = 'dotted')
-            ax1.axhline(m0,
-                        c         = 'xkcd:blue',
-                        linestyle = 'dotted')
-            ax1.axhline(m1,
-                        c         = 'xkcd:blue',
-                        linestyle = 'dotted')
-            ax2 = fig.add_subplot(1,2,2)
-            ax2.imshow(pixels[m0:m1,n0:n1], cmap = 'gray')
-        else:
-            pass
+        ax1.axvline(n1,
+                    c         = 'xkcd:blue',
+                    linestyle = 'dotted')
+        ax1.axhline(m0,
+                    c         = 'xkcd:blue',
+                    linestyle = 'dotted')
+        ax1.axhline(m1,
+                    c         = 'xkcd:blue',
+                    linestyle = 'dotted')
+        ax2 = fig.add_subplot(1,2,2)
+        ax2.imshow(pixels[m0:m1,n0:n1], cmap = 'gray')
 
         if args.step:
             show()
