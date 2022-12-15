@@ -35,7 +35,7 @@ from seaborn               import heatmap, set
 from sklearn.preprocessing import StandardScaler
 
 
-DATA      = '../data'
+DATA      = r'd:\data\rsna-breast-cancer-detection'
 TRAIN     = join(DATA,'train.csv')
 FIGS      = '../docs/figs'
 DENSITIES = {'A':0, 'B':1, 'C':2, 'D': 3}
