@@ -22,6 +22,7 @@
 # SOFTWARE.
 
 '''Get rid of irrelevant pixels and focus on tissue'''
+
 from abc               import ABC, abstractmethod
 from argparse          import ArgumentParser
 from loader            import Loader, get_all_images
@@ -46,31 +47,47 @@ class Segmenter(ABC):
         if view in Segmenter.Segmenters:
             return Segmenter.Segmenters[view]
 
-    def segment(self,pixels,laterality='L'):
+    def segment(self,pixels):
         '''Method to get rid of irrelevant pixels and focus on tissue'''
         pixels      = self._standardize_orientation(pixels,axis=1)
         m0,n0,m1,n1 = segmenter._get_bounds(pixels)
         return pixels [m0:m1,n0:n1]
 
-    @abstractmethod
-    def _standardize_orientation(self,pixels,laterality='L'):
-        '''Ensure tissue is at left hand of image'''
-        ...
+    def _standardize_orientation(self,pixels):
+        m,n = pixels.shape
+        m0, n0 = self._get_centre_of_mass(pixels)
+        if n0>n/2:
+            pixels = flip(pixels,axis=1)
+        return pixels
+
 
     @abstractmethod
     def _get_bounds(self,pixels,epsilon=0.01):
         ...
+
+    def _get_centre_of_mass(self,pixels,step=16):
+        '''
+        Calculate average of coordinates within image, weighted by pixel intensity
+        '''
+        x_total    = 0
+        y_total    = 0
+        mass_total = 0
+        m,n        = pixels.shape
+        background = pixels.max()
+        for i in range(0,m,step):
+            for j in range(0,n,step):
+                mass        = background - pixels[i,j]
+                x_total    += i*mass
+                y_total    += j*mass
+                mass_total += mass
+        return int(x_total/mass_total), int(y_total/mass_total)
+
 
 class CranioCaudalSegmenter(Segmenter):
     '''Get rid of irrelevant pixels from Cranio Caudal View and focus on tissue'''
 
     def __init__(self):
         self.key ='CC'
-
-    def _standardize_orientation(self,pixels,laterality='L'):
-        if laterality=='R':
-            pixels = flip(pixels,axis=1)
-        return pixels
 
     def _get_bounds(self,pixels,epsilon=0.01):
         threshold = pixels.max() - epsilon
@@ -99,13 +116,6 @@ class  MediolateralObliqueSegmenter(Segmenter):
     def __init__(self):
         self.key = 'MLO'
 
-    def _standardize_orientation(self,pixels,laterality='L'):
-        m,n = pixels.shape
-        m0, n0 = self._get_centre_of_mass(pixels)
-        if n0>n/2:
-            pixels = flip(pixels,axis=1)
-        return pixels
-
     def _get_bounds(self,pixels,epsilon=0.01):
         threshold = pixels.max() - epsilon
         m,n       = pixels.shape
@@ -117,22 +127,7 @@ class  MediolateralObliqueSegmenter(Segmenter):
         m1        = argmin(nfigure[n_max:-10]) + n_max
         return m0,n0,m1,n1
 
-    def _get_centre_of_mass(self,pixels,step=16):
-        '''
-        Calculate average of coordinates within image, weighted by pixel intensity
-        '''
-        x_total    = 0
-        y_total    = 0
-        mass_total = 0
-        m,n        = pixels.shape
-        background = pixels.max()
-        for i in range(0,m,step):
-            for j in range(0,n,step):
-                mass        = background - pixels[i,j]
-                x_total    += i*mass
-                y_total    += j*mass
-                mass_total += mass
-        return int(x_total/mass_total), int(y_total/mass_total)
+
 
 if __name__=='__main__':
     FIGS      = '../docs/figs'
@@ -151,7 +146,7 @@ if __name__=='__main__':
         fig                    = figure(figsize=(12,8))
         ax1                    = fig.add_subplot(1,2,1)
         fig.suptitle(f'{image_id} {laterality} {view}')
-        pixels      = segmenter._standardize_orientation(pixels,laterality=laterality)
+        pixels      = segmenter._standardize_orientation(pixels)
         ax1.imshow(pixels, cmap = 'gray')
 
         m0,n0,m1,n1 = segmenter._get_bounds(pixels)

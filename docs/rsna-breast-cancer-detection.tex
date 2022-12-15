@@ -85,12 +85,16 @@ My notes from the Kaggle competition \gls{gls:RSNA} Screening Mammography Breast
 			patient\_id&Numeric&Part of	prediction\_id&Yes\\  \hline
 			image\_id&Numeric&Link to image file image\_id.dcm&Yes\\  \hline
 			laterality&\{L,R\}&\begin{itemize}
-				\item Left
-				\item Right
+				\item Left breast
+				\item Right breast
 			\end{itemize}Part of	prediction\_id&Yes\\  \hline
-			view&\{CC,MLO\}& See \cite{murphy2021mamography} \begin{itemize}
+			view&\{CC,MLO,ML,LM,AT,LMO\}& See \cite{murphy2021mamography,roberts2022mamographic} \begin{itemize}
 				\item craniocaudal 
 				\item mediolateral oblique
+				\item ML - Medio Lateral
+				\item Latero-Medial
+				\item Axillary-Tail
+				\item Latero-Medial Oblique
 			\end{itemize}&Yes\\  \hline
 			age&empty or Numeric&&Yes\\  \hline
 			cancer&\{0,1\}&&No\\  \hline
