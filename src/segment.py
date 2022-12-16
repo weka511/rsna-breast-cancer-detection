@@ -86,8 +86,8 @@ class Segmenter(ABC):
 class CranioCaudalSegmenter(Segmenter):
     '''Get rid of irrelevant pixels from Cranio Caudal View and focus on tissue'''
 
-    def __init__(self):
-        self.key ='CC'
+    def __init__(self,key ='CC'):
+        self.key = key
 
     def _get_bounds(self,pixels,epsilon=0.01):
         threshold = pixels.max() - epsilon
@@ -113,8 +113,8 @@ class CranioCaudalSegmenter(Segmenter):
 class  MediolateralObliqueSegmenter(Segmenter):
     '''Get rid of irrelevant pixels from Mediolateral Oblique View and focus on tissue'''
 
-    def __init__(self):
-        self.key = 'MLO'
+    def __init__(self,key = 'MLO'):
+        self.key = key
 
     def _get_bounds(self,pixels,epsilon=0.01):
         threshold = pixels.max() - epsilon
@@ -133,8 +133,13 @@ if __name__=='__main__':
     FIGS      = '../docs/figs'
     Segmenter.Register(CranioCaudalSegmenter())
     Segmenter.Register(MediolateralObliqueSegmenter())
+    Segmenter.Register(MediolateralObliqueSegmenter(key='AT'))
+    Segmenter.Register(MediolateralObliqueSegmenter(key='LM'))
+    Segmenter.Register(MediolateralObliqueSegmenter(key='ML'))
+    Segmenter.Register(MediolateralObliqueSegmenter(key='LMO'))
     parser = ArgumentParser(__doc__)
     parser.add_argument('image_ids', nargs='*', type=int)
+    parser.add_argument('--views', nargs='*')
     parser.add_argument('--show', default=False, action='store_true')
     parser.add_argument('--step', default=False, action='store_true')
     args   = parser.parse_args()
@@ -142,32 +147,33 @@ if __name__=='__main__':
     image_ids = args.image_ids if len(args.image_ids)>0 else get_all_images()
     for image_id in image_ids:
         pixels,laterality,view = loader.get_image(image_id=image_id)
-        segmenter              = Segmenter.Create(view)
-        fig                    = figure(figsize=(12,8))
-        ax1                    = fig.add_subplot(1,2,1)
-        fig.suptitle(f'{image_id} {laterality} {view}')
-        pixels      = segmenter._standardize_orientation(pixels)
-        ax1.imshow(pixels, cmap = 'gray')
+        if len(args.views)==0 or view in args.views:
+            segmenter              = Segmenter.Create(view)
+            fig                    = figure(figsize=(12,8))
+            ax1                    = fig.add_subplot(1,2,1)
+            fig.suptitle(f'{image_id} {laterality} {view}')
+            pixels      = segmenter._standardize_orientation(pixels)
+            ax1.imshow(pixels, cmap = 'gray')
 
-        m0,n0,m1,n1 = segmenter._get_bounds(pixels)
+            m0,n0,m1,n1 = segmenter._get_bounds(pixels)
 
-        ax1.axvline(n1,
-                    c         = 'xkcd:blue',
-                    linestyle = 'dotted')
-        ax1.axhline(m0,
-                    c         = 'xkcd:blue',
-                    linestyle = 'dotted')
-        ax1.axhline(m1,
-                    c         = 'xkcd:blue',
-                    linestyle = 'dotted')
-        ax2 = fig.add_subplot(1,2,2)
-        ax2.imshow(pixels[m0:m1,n0:n1], cmap = 'gray')
-        fig.savefig(join(FIGS,f'segment-{image_id}'))
-        if args.step:
-            show()
-        else:
-            if not args.show:
-                close(fig)
+            ax1.axvline(n1,
+                        c         = 'xkcd:blue',
+                        linestyle = 'dotted')
+            ax1.axhline(m0,
+                        c         = 'xkcd:blue',
+                        linestyle = 'dotted')
+            ax1.axhline(m1,
+                        c         = 'xkcd:blue',
+                        linestyle = 'dotted')
+            ax2 = fig.add_subplot(1,2,2)
+            ax2.imshow(pixels[m0:m1,n0:n1], cmap = 'gray')
+            fig.savefig(join(FIGS,f'segment-{image_id}'))
+            if args.step:
+                show()
+            else:
+                if not args.show:
+                    close(fig)
 
         if args.show and not args.step:
             show()
