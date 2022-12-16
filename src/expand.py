@@ -29,13 +29,14 @@ from zipfile import ZipFile
 
 PATH = r'D:\data\rsna-breast-cancer-detection/'
 
-z = ZipFile(join(PATH,'part.zip'))
-for filename in z.namelist():
+zipfile = ZipFile(join(PATH,'part.zip'))
+
+for filename in zipfile.namelist():
     print (filename)
     parts = filename.split('_')
-    z.extract(filename,path=join(PATH,'train',parts[0]))
+    zipfile.extract(filename,path=join(PATH,'train_images',parts[0]))
 
-for  dirpath, _, filenames in walk(join(PATH,'train')):
+for  dirpath, _, filenames in walk(join(PATH,'train_images')):
     for filename in filenames:
         parts = filename.split('_')
         if len(parts)>1:

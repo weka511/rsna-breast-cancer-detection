@@ -36,7 +36,7 @@ class Loader:
     '''
     def __init__(self,
                  path = r'D:\data\rsna-breast-cancer-detection',
-                 dataset = 'train'):
+                 dataset = 'train_images'):
         self.images_path   = join(path,dataset)
         self.master = read_csv(join(path,f'{dataset}.csv'))
 
@@ -74,7 +74,7 @@ class Loader:
         return pixels,laterality2,view
 
 def get_all_images(path = r'D:\data\rsna-breast-cancer-detection',
-                   dataset = 'train'):
+                   dataset = 'train_images'):
     '''A generator for iterating through all images'''
     for dirpath, dirnames, filenames in walk(join(path,dataset)):
         for filename in filenames:

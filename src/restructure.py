@@ -32,7 +32,7 @@ from pathlib import Path
 from shutil  import move
 PATH     = r'D:\data\rsna-breast-cancer-detection'
 MASTER   = read_csv(join(PATH,'train.csv'))
-SUB_PATH =  join(PATH,'train')
+SUB_PATH =  join(PATH,'train_images')
 
 for index,row in MASTER.iterrows():
     patient_id = row['patient_id']
