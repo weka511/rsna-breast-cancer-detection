@@ -146,12 +146,12 @@ if __name__=='__main__':
     loader = Loader()
     image_ids = args.image_ids if len(args.image_ids)>0 else get_all_images()
     for image_id in image_ids:
-        pixels,laterality,view = loader.get_image(image_id=image_id)
-        if len(args.views)==0 or view in args.views:
+        pixels,laterality,view,cancer = loader.get_image(image_id=image_id)
+        if args.views==None or len(args.views)==0 or view in args.views:
             segmenter              = Segmenter.Create(view)
             fig                    = figure(figsize=(12,8))
             ax1                    = fig.add_subplot(1,2,1)
-            fig.suptitle(f'{image_id} {laterality} {view}')
+            fig.suptitle(f'{image_id} {laterality} {view} {cancer}')
             pixels      = segmenter._standardize_orientation(pixels)
             ax1.imshow(pixels, cmap = 'gray')
 

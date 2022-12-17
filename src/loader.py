@@ -35,10 +35,17 @@ class Loader:
     This class loads images and metadata
     '''
     def __init__(self,
-                 path = r'D:\data\rsna-breast-cancer-detection',
-                 dataset = 'train_images'):
-        self.images_path   = join(path,dataset)
-        self.master = read_csv(join(path,f'{dataset}.csv'))
+                 path    = r'D:\data\rsna-breast-cancer-detection',
+                 dataset = 'train'):
+        '''
+        Configure loader
+
+        Parameters:
+            path       To Aal data
+            dataset    train or test
+        '''
+        self.images_path = join(path,f'{dataset}_images')
+        self.master      = read_csv(join(path,f'{dataset}.csv'))
 
     def get_image(self,
                   image_id   = None,
@@ -47,13 +54,16 @@ class Loader:
         Load specified image.
         Invert if necessary so PhotometricInterpretation is MONOCHROME1 (i.e. background is white)
 
+        Parameters
+            image_id      Indicates image
+            patient_id    May be omitted
         Returns:
              pixels      The pixels representing  the image
              laterality  L or R
              view        CC or MLO
         '''
         if patient_id==None:
-            row = self.master[self.master['image_id']==image_id]
+            row        = self.master[self.master['image_id']==image_id]
             patient_id = int(row['patient_id'])
 
         dataset                   = open(join(self.images_path,str(patient_id),f'{image_id}.dcm'))
@@ -71,7 +81,8 @@ class Loader:
         laterality  = dataset.getDataElement('ImageLaterality').value(),
         laterality2 = row['laterality'].values[0]
         assert laterality == (laterality2,)
-        return pixels,laterality2,view
+        cancer = row['cancer']
+        return pixels,laterality2,view,int(cancer)
 
 def get_all_images(path = r'D:\data\rsna-breast-cancer-detection',
                    dataset = 'train_images'):
@@ -83,9 +94,9 @@ def get_all_images(path = r'D:\data\rsna-breast-cancer-detection',
 
 if __name__=='__main__':
     loader   = Loader()
-    pixels,laterality,view = loader.get_image(image_id=388811999)
+    pixels,laterality,view,cancer = loader.get_image(image_id=388811999)
     fig      = figure(figsize=(12,8))
     ax1      = fig.add_subplot(1,1,1)
     ax1.imshow(pixels, cmap = 'gray')
-    fig.suptitle(f'{laterality} {view}')
+    fig.suptitle(f'{laterality} {view} {cancer}')
     show()
