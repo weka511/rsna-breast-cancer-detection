@@ -28,12 +28,13 @@
 
 from argparse          import ArgumentParser
 from dicomsdl          import open
+from loader            import Loader
 from matplotlib.pyplot import figure, show
 from os.path           import exists, join
 from pandas            import read_csv
 from visualize         import get_bounds
 
-DATA                = '../data'
+DATA                = 'D:/data/rsna-breast-cancer-detection'
 TRAIN               = join(DATA,'train.csv')
 FIGS                = '../docs/figs'
 
@@ -41,6 +42,8 @@ FIGS                = '../docs/figs'
 parser = ArgumentParser('Visualize Data',__doc__)
 parser.add_argument('--show', default=False, action='store_true')
 args = parser.parse_args()
+
+loader = Loader()
 
 for _,row in read_csv(TRAIN).iterrows():
     site_id                 = row['site_id']
@@ -58,19 +61,20 @@ for _,row in read_csv(TRAIN).iterrows():
     machine_id              = row['machine_id']
     difficult_negative_case = row['difficult_negative_case']
     if cancer==1:
-        dcm_file  = join(DATA,f'{image_id}.dcm')
+        dcm_file  = loader.get_image_file_name(patient_id,image_id)#join(DATA,f'{image_id}.dcm')
         if exists(dcm_file):
             print (row['site_id'],row['patient_id'],row['image_id'],row['laterality'],dcm_file)
             try:
-                dataset = open(dcm_file)
-                pixels = dataset.pixelData()
-                xmin,ymin,xmax,ymax = get_bounds(pixels)
+                img,laterality,view,cancer = loader.get_image(image_id=image_id)
+                # dataset = open(dcm_file)
+                # pixels = dataset.pixelData()
+                xmin,ymin,xmax,ymax, _ = get_bounds(img)
                 fig = figure(figsize=(6,6))
                 fig.suptitle(f'Site={site_id}, Patient={patient_id}, Image={image_id}')
                 ax1 = fig.add_subplot(2,1,1)
-                ax1.imshow(pixels)
+                ax1.imshow(img)
                 ax2 = fig.add_subplot(2,1,2)
-                ax2.imshow(pixels[xmin:xmax,ymin:ymax])
+                ax2.imshow(img[xmin:xmax,ymin:ymax], cmap = 'gray')
                 fig.suptitle(f'{laterality} {view} {age} {cancer} {biopsy}')
                 fig.savefig(join(FIGS,f'{image_id}'))
             except RuntimeError as e:

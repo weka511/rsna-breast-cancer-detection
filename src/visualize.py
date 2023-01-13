@@ -58,7 +58,7 @@ def get_bounds(pixel_array):
 
     '''
     def is_background(strip):
-        '''Determine whther strip is part of background'''
+        '''Determine whether strip is part of background'''
         if background_low:
             return all(strip<=background)
         else:
