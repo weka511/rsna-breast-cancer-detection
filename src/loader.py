@@ -26,7 +26,6 @@
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
 from numpy             import uint8
-from os                import walk
 from os.path           import exists, join
 from pandas            import read_csv
 
@@ -42,25 +41,32 @@ class Loader:
         Configure loader
 
         Parameters:
-            path       To Aal data
+            path       To all data, train or test
             dataset    train or test
         '''
         self.images_path = join(path,f'{dataset}_images')
         self.master      = read_csv(join(path,f'{dataset}.csv'))
 
+    def get_image_file_name(self,patient_id,image_id):
+        return join(self.images_path,str(patient_id),f'{image_id}.dcm')
+
     def get_image(self,
                   image_id               = None,
                   patient_id             = None,
-                  should_apply_windowing = True):
+                  should_apply_windowing = True,
+                  show_pixel_data_info   = False):
         '''
         Load specified image.
         Invert if necessary so PhotometricInterpretation is MONOCHROME1 (i.e. background is white)
 
         Parameters
-            image_id      Indicates image
-            patient_id    May be omitted
+            image_id                 Indicates image
+            patient_id               May be omitted
+            should_apply_windowing   Controls whether image should be windows
+            show_pixel_data_info     For exploration
+
         Returns:
-             img      The pixels representing  the image
+             img         The pixels representing  the image
              laterality  L or R
              view        CC or MLO
         '''
@@ -68,15 +74,15 @@ class Loader:
             row        = self.master[self.master['image_id']==image_id]
             patient_id = int(row['patient_id'])
 
-        ds                   = open(join(self.images_path,str(patient_id),f'{image_id}.dcm'))
-        for key,value in ds.getPixelDataInfo().items():
-            print (key,value)
+        ds                   = open(self.get_image_file_name(patient_id,image_id))
+
+        if show_pixel_data_info:
+            for key,value in ds.getPixelDataInfo().items():
+                print (key,value)
         img                       = ds.pixelData()
         PhotometricInterpretation = ds.getDataElement('PhotometricInterpretation').value()
         SamplesPerPixel           = ds.getDataElement('SamplesPerPixel').value()
         ImageLaterality           = ds.getDataElement('ImageLaterality').value()
-        Rows                      = ds.getDataElement('Rows').value()
-        Columns                   = ds.getDataElement('Columns').value()
         m,n                       = img.shape
         assert m==ds.getDataElement('Rows').value() and n==ds.getDataElement('Columns').value()
 
@@ -88,7 +94,8 @@ class Loader:
         laterality2 = row['laterality'].values[0]
         assert laterality == (laterality2,)
         cancer = row['cancer']
-        return self.normalize(self.force_monochrome1(PhotometricInterpretation,img)),laterality2,view,int(cancer)
+        img = self.force_monochrome1(PhotometricInterpretation,img)
+        return self.normalize(img) if should_apply_windowing else img,laterality2,view,int(cancer)
 
     def apply_windowing(self,ds,img):
         '''
@@ -96,11 +103,18 @@ class Loader:
 
         snarfed from https://www.kaggle.com/code/omission/eda-view-dicom-images-with-correct-windowing/notebook
         '''
+        def get_first_element(x):
+            if type(x)==list:
+                print (x)
+                return x[0]
+            else:
+                return x
+
         RescaleIntercept = ds.getDataElement('RescaleIntercept').value()
         RescaleSlope     = ds.getDataElement('RescaleSlope').value()
         img              = img*RescaleSlope +RescaleIntercept
-        WindowCenter     = ds.getDataElement('WindowCenter').value()
-        WindowWidth      = ds.getDataElement('WindowWidth').value()
+        WindowCenter     = get_first_element(ds.getDataElement('WindowCenter').value())
+        WindowWidth      = get_first_element(ds.getDataElement('WindowWidth').value())
         img_min          = WindowCenter - WindowWidth//2
         img_max          = WindowCenter + WindowWidth//2
         img[img<img_min] = img_min
@@ -119,7 +133,7 @@ class Loader:
 
     def normalize(self,img):
         '''
-        Forece image pixels into 0-255
+        Force image pixels into 0-255
         '''
         if img.max() != 0:
             img = img /img.max()
@@ -136,16 +150,14 @@ def get_all_images(path = r'D:\data\rsna-breast-cancer-detection',
 
 if __name__=='__main__':
     loader   = Loader()
-    img,laterality,view,cancer = loader.get_image(image_id=388811999,should_apply_windowing=False)
+    img,laterality,view,cancer = loader.get_image(image_id=797737008)
+    img0,_,_,_ = loader.get_image(image_id=797737008,should_apply_windowing=False)
     fig      = figure(figsize=(12,8))
     ax1      = fig.add_subplot(2,2,1)
-    ax1.imshow(img, cmap = 'gray')
-    img_w,_,_,_ = loader.get_image(image_id=388811999)
+    ax1.imshow(img0, cmap = 'gray')
     ax2      = fig.add_subplot(2,2,2)
-    ax2.imshow(img, cmap = 'gray')
+    ax2.hist(img0)
     ax3      = fig.add_subplot(2,2,3)
-    ax3.hist(img)
-    ax4      = fig.add_subplot(2,2,4)
-    ax4.hist(img_w)
+    ax3.imshow(img, cmap = 'gray')
     fig.suptitle(f'{laterality} {view} {cancer}')
     show()
