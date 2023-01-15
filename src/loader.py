@@ -29,6 +29,7 @@ from matplotlib.pyplot import figure, show
 from numpy             import exp, uint8
 from os.path           import exists, join
 from pandas            import read_csv
+from warnings          import warn
 
 class VOILUT(ABC):
     '''
@@ -47,27 +48,40 @@ class VOILUT(ABC):
         VOILUTFunction   = ds['VOILUTFunction']
         if VOILUTFunction=='SIGMOID':
             return Sigmoid(ds)
+        elif VOILUTFunction=='LINEAR_EXACT':
+            return LinearExact(ds)
         else:
             return Linear(ds)
 
     def __init__(self,ds):
-        self.RescaleIntercept = ds.getDataElement('RescaleIntercept').value()
-        self.RescaleSlope     = ds.getDataElement('RescaleSlope').value()
         self.WindowCenter     = VOILUT.get_first_element(ds.getDataElement('WindowCenter').value())
         self.WindowWidth      = VOILUT.get_first_element(ds.getDataElement('WindowWidth').value())
+
+    @abstractmethod
     def scale(self,img):
         ...
 
+
 class Linear(VOILUT):
+    '''
+    if (x <= c - 0.5 - (w-1) /2), then y = ymin
+
+    else if (x > c - 0.5 + (w-1) /2), then y = ymax
+
+    else y = ((x - (c - 0.5)) / (w-1) + 0.5) * (ymax- ymin) + ymin
+
+    '''
     def __init__(self,ds):
         super().__init__(ds)
-        self.img_min          = self.WindowCenter - self.WindowWidth//2
-        self.img_max          = self.WindowCenter + self.WindowWidth//2
-    @abstractmethod
+        self.RescaleIntercept = ds.getDataElement('RescaleIntercept').value()
+        self.RescaleSlope     = ds.getDataElement('RescaleSlope').value()
+
     def scale(self,img):
-        img_scaled                          = img*self.RescaleSlope +self.RescaleIntercept
-        img_scaled[img_scaled<self.img_min] = self.img_min
-        img_scaled[img_scaled>self.img_max] = self.img_max
+        img_min                        = self.WindowCenter - self.WindowWidth//2
+        img_max                        = self.WindowCenter + self.WindowWidth//2
+        img_scaled                     = img*self.RescaleSlope +self.RescaleIntercept
+        img_scaled[img_scaled<img_min] = img_min
+        img_scaled[img_scaled>img_max] = img_max
         return img_scaled
 
 class Sigmoid(VOILUT):
@@ -80,6 +94,18 @@ class Sigmoid(VOILUT):
         scaled1 = (img-self.WindowCenter)/self.WindowWidth
         return self.OutputRange/(1+exp(-4*scaled1))
 
+class LinearExact(Linear):
+    '''
+    if (x <= c - w/2), then y = ymin
+
+    else if (x > c + w/2), then y = ymax
+
+    else y = (x - c) / w * (ymax- ymin) + ymin
+
+    '''
+    def __init__(self,ds):
+        super().__init__(ds)
+        warn('LINEAR_EXACT not implemented: using LINEAR_instead.')
 
 class Loader:
     '''
@@ -168,6 +194,7 @@ class Loader:
             img = img /img.max()
 
         return (img * 255).astype(uint8)
+
 
 def get_all_images(path = r'D:\data\rsna-breast-cancer-detection',
                    dataset = 'train_images'):
