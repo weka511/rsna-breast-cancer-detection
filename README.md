@@ -12,6 +12,7 @@ src|covariance.py|Calculate covariance matrix for possibly interconnected fields
 &nbsp;|loader|Read image from restructured data on drive D
 &nbsp;|restructure.py| Restructure downloaded training data so all patient directories exist and are in images in patient files.   Does not download new data.
 &nbsp;|segment.py|Separate breast from the rest
+&nbsp;|split_batch.py|Utility to split download batch file to work around Kaggle limitations
 &nbsp;|visualize.py|Visualize data
 &nbsp;|visualize_train.py|Visualize training data
 &nbsp;|visualize_cancers.py|Visualize images with cancer spots
