@@ -61,18 +61,16 @@ for _,row in read_csv(TRAIN).iterrows():
     machine_id              = row['machine_id']
     difficult_negative_case = row['difficult_negative_case']
     if cancer==1:
-        dcm_file  = loader.get_image_file_name(patient_id,image_id)#join(DATA,f'{image_id}.dcm')
+        dcm_file  = loader.get_image_file_name(patient_id,image_id)
         if exists(dcm_file):
             print (row['site_id'],row['patient_id'],row['image_id'],row['laterality'],dcm_file)
             try:
                 img,laterality,view,cancer = loader.get_image(image_id=image_id)
-                # dataset = open(dcm_file)
-                # pixels = dataset.pixelData()
                 xmin,ymin,xmax,ymax, _ = get_bounds(img)
                 fig = figure(figsize=(6,6))
                 fig.suptitle(f'Site={site_id}, Patient={patient_id}, Image={image_id}')
                 ax1 = fig.add_subplot(2,1,1)
-                ax1.imshow(img)
+                ax1.imshow(img, cmap = 'gray')
                 ax2 = fig.add_subplot(2,1,2)
                 ax2.imshow(img[xmin:xmax,ymin:ymax], cmap = 'gray')
                 fig.suptitle(f'{laterality} {view} {age} {cancer} {biopsy}')
