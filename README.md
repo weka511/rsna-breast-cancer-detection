@@ -18,6 +18,3 @@ src|covariance.py|Calculate covariance matrix for possibly interconnected fields
 &nbsp;|visualize_cancers.py|Visualize images with cancer spots
 &nbsp;|visualize_pairs.py|Visualize all images for pateints with at least one cancer spot
 &nbsp;|rsna&#8209;breast&#8209;cancer&#8209;detection.wpr|WingIDE project file
-data|sample_submission.csv|Shows format for submission
-&nbsp;|test.csv|Test data (without images)
-&nbsp;|train.csv|Training data (without images)
