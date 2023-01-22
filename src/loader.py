@@ -27,6 +27,7 @@ from abc               import ABC,abstractmethod
 from dicomsdl          import open
 from matplotlib.pyplot import figure, show
 from numpy             import exp, uint8
+from os                import walk
 from os.path           import exists, join
 from pandas            import read_csv
 from warnings          import warn
