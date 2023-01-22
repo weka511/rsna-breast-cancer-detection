@@ -28,7 +28,7 @@ from argparse          import ArgumentParser
 from cv2               import resize, INTER_CUBIC
 from loader            import get_all_images,  Loader
 from matplotlib.pyplot import figure, show
-from numpy             import argmax, argmin, array, histogram, zeros
+from numpy             import argmax, argmin, argsort, array, histogram, zeros
 from numpy.linalg      import norm
 from numpy.random      import default_rng
 from os.path           import join
@@ -54,11 +54,12 @@ class Component:
 
 class Segmenter:
     def __init__(self,seed=None):
-        self.n          = []
-        self.bins       = []
-        self.points     = []
-        self.rng        = default_rng(seed=seed)
-        self.components = []
+        self.n                    = []
+        self.bins                 = []
+        self.points               = []
+        self.rng                  = default_rng(seed=seed)
+        self.components           = []
+        self.connected_components = []
 
     def segment(self,img):
         self.create_foreground(img,get_threshold(img))
@@ -95,15 +96,51 @@ class Segmenter:
         index     = argmin(distances)
         return self.components[index],distances[index]
 
-    def prune_components(self):
-        n = len(self.components)
-        distances = zeros((n,n))
-        if n<2: return
+    def connect_components(self,distances,min_gap=2):
+        to_connect      = set(range(len(self.components)))
+        connected       = {}
+        open_components = []
+        while len(to_connect)>0:
+            i = to_connect.pop()
+            connected[i] = [i]
+            for j in to_connect:
+                if distances[i,j] < min_gap:
+                    open_components.append(j)
+            for j in open_components:
+                if j in to_connect:
+                    to_connect.remove(j)
+            while len(open_components)>0:
+                successors = []
+                for j in open_components:
+                    connected[i].append(j)
+                    connected[j] = connected[i]
+                    to_remove=[]
+                    for k in to_connect:
+                        if distances[j,k] < min_gap:
+                            successors.append(k)
+                            to_remove.append(k)
+                    for k in to_remove:
+                        to_connect.remove(k)
+                open_components = successors
+
+        connected_components0 = []
+        duplicates            = set()
+        for key,values in connected.items():
+            if not key in duplicates:
+                connected_components0.append(values)
+                for value in values:
+                    duplicates.add(value)
+        sizes = [len(c) for c in connected_components0]
+        self.connected_components = [connected_components0[i] for i in argsort(sizes)[::-1]]
+
+    def create_distances(self):
+        n       = len(self.components)
+        product = zeros((n,n))
         for i in range(n):
             for j in range(i,n):
-                distances[i,j] = self.components[i].get_distance(self.components[j])
-                distances[j,i] = distances[i,j]
-        print (distances)
+                product[i,j] = self.components[i].get_distance(self.components[j])
+                product[j,i] = product[i,j]
+        return product
 
 if __name__=='__main__':
     FIGS   = '../docs/figs'
@@ -124,7 +161,7 @@ if __name__=='__main__':
         threshold = segmenter.get_threshold(resized)
         segmenter.create_foreground(resized,threshold)
         segmenter.create_components()
-        segmenter.prune_components()
+        segmenter.connect_components(segmenter.create_distances())
 
         fig = figure(figsize=(8,8))
         fig.suptitle(f'{image_id}')
@@ -152,6 +189,19 @@ if __name__=='__main__':
             ys = [y for x,y in component.points]
             ax3.scatter(ys,xs,label=f'{i+1}')
         ax3.legend()
+
+        ax4 = fig.add_subplot(2,2,4)
+        for i,connected in  enumerate(segmenter.connected_components):
+            xs = []
+            ys = []
+            for j in connected:
+                component = segmenter.components[j]
+                for x,y in component.points:
+                    xs.append(128-x-1)
+                    ys.append(y)
+            ax4.scatter(ys,xs,label=f'{i+1}')
+        ax4.legend()
+
         fig.savefig(join(FIGS,f'dirichlet-{image_id}'))
         if not args.show:
             close(fig)
