@@ -26,13 +26,14 @@
 
 from argparse          import ArgumentParser
 from cv2               import resize, INTER_CUBIC
-from loader            import Loader
+from loader            import get_all_images,  Loader
 from matplotlib.pyplot import figure, show
-from numpy             import argmax, argmin, array, histogram
+from numpy             import argmax, argmin, array, histogram, zeros
 from numpy.linalg      import norm
 from numpy.random      import default_rng
 from os.path           import join
 from os                import walk
+from sys               import float_info
 
 class Component:
     def __init__(self,point):
@@ -43,6 +44,13 @@ class Component:
         self.points.append(point)
         m             = len(self.points)
         self.centroid = ((m-1)* self.centroid + point)/m
+
+    def get_distance(self,component):
+        distance = float_info.max
+        for pt1 in self.points:
+            for pt2 in component.points:
+                distance = min(distance,norm(pt1-pt2))
+        return distance
 
 class Segmenter:
     def __init__(self,seed=None):
@@ -71,7 +79,7 @@ class Segmenter:
         for i in self.rng.integers(low=0, high=len(self.points), size=size):
             yield array(self.points[i])
 
-    def create_components(self,N=1024,lambda_=64):
+    def create_components(self,N=1024,lambda_=32):
         for sample in self.samples(size=N):
             if len(self.components)==0:
                 self.components.append(Component(sample))
@@ -87,14 +95,26 @@ class Segmenter:
         index     = argmin(distances)
         return self.components[index],distances[index]
 
+    def prune_components(self):
+        n = len(self.components)
+        distances = zeros((n,n))
+        if n<2: return
+        for i in range(n):
+            for j in range(i,n):
+                distances[i,j] = self.components[i].get_distance(self.components[j])
+                distances[j,i] = distances[i,j]
+        print (distances)
+
 if __name__=='__main__':
+    FIGS   = '../docs/figs'
     parser = ArgumentParser(__doc__)
-    parser.add_argument('image_ids', nargs='*', type=int, default=[797737008])
+    parser.add_argument('image_ids', nargs='*', type=int, default=[])
     parser.add_argument('--show', default=False, action='store_true')
     args      = parser.parse_args()
     loader    = Loader()
 
-    for image_id in args.image_ids:
+    for image_id in args.image_ids if len(args.image_ids)>0 else get_all_images():
+        print (image_id)
         segmenter = Segmenter()
         img,_,_,_ = loader.get_image(image_id = image_id)
         resized   = resize(img,
@@ -104,6 +124,7 @@ if __name__=='__main__':
         threshold = segmenter.get_threshold(resized)
         segmenter.create_foreground(resized,threshold)
         segmenter.create_components()
+        segmenter.prune_components()
 
         fig = figure(figsize=(8,8))
         fig.suptitle(f'{image_id}')
@@ -126,10 +147,14 @@ if __name__=='__main__':
         ax3.set_xlim(ax1.get_xlim())
         y0,y1 = ax1.get_ylim()
         ax3.set_ylim(y1,y0)
-        for component in segmenter.components:
+        for i,component in  enumerate(segmenter.components):
             xs = [128-x-1 for x,y in component.points]
             ys = [y for x,y in component.points]
-            ax3.scatter(ys,xs)
+            ax3.scatter(ys,xs,label=f'{i+1}')
+        ax3.legend()
+        fig.savefig(join(FIGS,f'dirichlet-{image_id}'))
+        if not args.show:
+            close(fig)
 
     if args.show:
         show()
