@@ -33,12 +33,12 @@ from warnings          import warn
 
 class VOILUT(ABC):
     '''
+    A class to implement the VOI LUT functiionality described in the DICOM standard
     https://dicom.nema.org/medical/dicom/2018b/output/chtml/part03/sect_C.11.2.html#equation_C.11-1
     '''
     @staticmethod
     def get_first_element(x):
         if type(x)==list:
-            print (x)
             return x[0]
         else:
             return x
@@ -64,6 +64,11 @@ class VOILUT(ABC):
 
 class Linear(VOILUT):
     '''
+    If VOI LUT Function (0028,1056) is absent or has a value of LINEAR, Window Center (0028,1050) and Window Width (0028,1051)
+    specify a linear conversion from stored pixel values (after any Modality LUT or Rescale Slope and Intercept specified
+    in the IOD have been applied) to values to be displayed. Window Center contains the input value that is the center
+    of the window. Window Width contains the width of the window.
+
     if (x <= c - 0.5 - (w-1) /2), then y = ymin
 
     else if (x > c - 0.5 + (w-1) /2), then y = ymax
@@ -85,6 +90,10 @@ class Linear(VOILUT):
         return img_scaled
 
 class Sigmoid(VOILUT):
+    '''
+    If the value of VOI LUT Function (0028,1056) is SIGMOID, the function to be used to convert the output of the
+    (conceptual) Modality LUT values to the input of the (conceptual) Presentation LUT is given by Equation C.11-1.
+    '''
     def __init__(self,ds):
         super().__init__(ds)
         BitsStored       = ds.getDataElement('BitsStored').value()
@@ -96,11 +105,18 @@ class Sigmoid(VOILUT):
 
 class LinearExact(Linear):
     '''
+    If the value of VOI LUT Function (0028,1056) is LINEAR_EXACT, the function to be used to convert the output
+    of the (conceptual) Modality LUT values to the input of the (conceptual) Presentation LUT is given by the
+    following pseudo-code, where x is the input value, y is an output value with a range from ymin to ymax,
+    c is Window Center (0028,1050) and w is Window Width (0028,1051):
+
     if (x <= c - w/2), then y = ymin
 
     else if (x > c + w/2), then y = ymax
 
     else y = (x - c) / w * (ymax- ymin) + ymin
+
+    AFAIK, this VOI LUT function is not actually used.
 
     '''
     def __init__(self,ds):

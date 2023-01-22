@@ -38,15 +38,21 @@ DATA                = 'D:/data/rsna-breast-cancer-detection'
 TRAIN               = join(DATA,'train.csv')
 FIGS                = '../docs/figs'
 
+def cancer_on_one_side_only(df_patient):
+    '''
+    Used to find images where there is cancer on one side, but not the other
+    '''
+    return df_patient['cancer'].any() and not df_patient['cancer'].all()
+
 def get_grid_size(N):
     '''
-    Used to establish a rectangulat grid that has room for a specified number of elements
+    Used to establish a rectangular grid that has room for a specified number of subplots
 
     Parameters:
-        N
+        N      Number of subplots
 
     Returns:
-        m,n such that m*n>=N
+        m,n such that m*n>=N and m*m <= N
 
     '''
     m = isqrt(N)
@@ -55,44 +61,68 @@ def get_grid_size(N):
         n += 1
     return m,n
 
-parser = ArgumentParser('Visualize Data',__doc__)
-parser.add_argument('--show', default=False, action='store_true')
-args = parser.parse_args()
+Lateralities = {'L'  : 'Left',
+                'R'  : 'Right'
+}
 
-loader    = Loader()
-df        = read_csv(TRAIN)
-processed = set()
+Cancer = ['Cancer', '-']
 
-with open('download_partners.bat','w') as out:
-    for _,row in df.iterrows():
-        patient_id = row['patient_id']
-        if patient_id in processed: continue
-        processed.add(patient_id)
-        df_patient = df[df['patient_id']==patient_id]
-        if df_patient['cancer'].any():
-            m,n = get_grid_size(len(df_patient))
-            k = 0
-            for image_id in df_patient['image_id']:
-                dcm_file  = loader.get_image_file_name(patient_id,image_id)
-                if exists(dcm_file):
-                    if k==0:
-                        fig = figure(figsize=(10,10))
-                        fig.suptitle(f'Patient={patient_id}')
-                    k+= 1
-                    print (row['site_id'],row['patient_id'],row['image_id'],row['laterality'],dcm_file)
-                    try:
-                        img,laterality,view,cancer = loader.get_image(image_id=image_id)
-                        xmin,ymin,xmax,ymax, _ = get_bounds(img)
-                        ax = fig.add_subplot(m,n,k)
-                        ax.imshow(img[xmin:xmax,ymin:ymax], cmap = 'gray')
-                        ax.set_title(f'{image_id} {laterality} {view} {cancer}')
-                    except RuntimeError as e:
-                        print (e)
-                else:
-                    out.write(f'kaggle competitions download -f train_images/{patient_id}/{image_id}.dcm  -p {DATA} rsna-breast-cancer-detection\n')
-            if k>0:
-                fig.savefig(join(FIGS,f'{patient_id}'))
+Views = {
+    'CC'  : 'craniocaudal',
+    'MLO' : 'Medio Lateral Oblique',
+    'ML'  : 'Medio Lateral',
+    'LM'  : 'Latero-Medial',
+    'AT'  : 'Axillary-Tail',
+    'LMO' : 'Latero-Medial Oblique'
+}
 
-if args.show:
-    show()
+def get_density(density):
+    return density if density in ['A', 'B', 'C', 'D'] else '-'
+
+
+
+if __name__=='__main__':
+    parser = ArgumentParser('Visualize Data',__doc__)
+    parser.add_argument('--show', default=False, action='store_true')
+    args = parser.parse_args()
+
+    loader    = Loader()
+    df        = read_csv(TRAIN)
+    processed = set()
+
+    with open('download_partners.bat','w') as out:
+        for _,row in df.iterrows():
+            patient_id = row['patient_id']
+            if patient_id in processed: continue
+            processed.add(patient_id)
+            df_patient = df[df['patient_id']==patient_id]
+            if cancer_on_one_side_only(df_patient):
+                df_patient = df_patient.sort_values(['cancer','view'])
+                m,n        = get_grid_size(len(df_patient))
+                k          = 0
+                for image_id in df_patient['image_id']:
+                    dcm_file  = loader.get_image_file_name(patient_id,image_id)
+                    if exists(dcm_file):
+                        if k==0:
+                            fig = figure(figsize=(10,10))
+                            fig.suptitle(f'Patient={patient_id}')
+                        k+= 1
+                        print (row['site_id'],row['patient_id'],row['image_id'],row['laterality'],dcm_file)
+                        try:
+                            img,laterality,view,cancer = loader.get_image(image_id=image_id)
+                            xmin,ymin,xmax,ymax, _     = get_bounds(img)
+                            density                    = get_density(row['density'])
+                            ax = fig.add_subplot(m,n,k)
+                            ax.imshow(img[xmin:xmax,ymin:ymax], cmap = 'gray')
+                            ax.set_title(f'{image_id} {laterality} {view} {density} {cancer}')
+                        except RuntimeError as e:
+                            print (e)
+                    else:
+                        out.write(f'kaggle competitions download -f train_images/{patient_id}/{image_id}.dcm  -p {DATA} rsna-breast-cancer-detection\n')
+                if k>0:
+                    fig.savefig(join(FIGS,f'{patient_id}'))
+
+
+    if args.show:
+        show()
 
